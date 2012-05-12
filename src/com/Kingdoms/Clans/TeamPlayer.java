@@ -5,7 +5,6 @@ import java.util.Calendar;
 
 public class TeamPlayer {
 
-	private int ELO;
 	private Calendar LastSeen;
 
 	private String TeamKey;
@@ -15,9 +14,8 @@ public class TeamPlayer {
 	
 	
 	//For Loading from a file at start up
-	TeamPlayer(int ELOin, Calendar LastSeenin, boolean canTC)
+	TeamPlayer(Calendar LastSeenin, boolean canTC)
 	{
-		ELO = ELOin;
 		LastSeen = LastSeenin;
 		TeamKey = "";
 		Invite = "";
@@ -26,7 +24,6 @@ public class TeamPlayer {
 	//When player joins for the first time
 	TeamPlayer(boolean canTC)
 	{
-		ELO = 1400;
 		LastSeen = getCurrentDate();
 		TeamKey = "";
 		Invite = "";
@@ -60,10 +57,14 @@ public class TeamPlayer {
 	{
 		LastSeen = getCurrentDate();
 	}
+	public Calendar getLastSeen()
+	{
+		return LastSeen;
+	}
 	private Calendar getCurrentDate()
 	{
 		Calendar cal = Calendar.getInstance();
-		cal.set(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH)+1, cal.get(Calendar.DATE));
+		cal.set(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DATE));
         return cal;
 	}
 	public void setInvite(String invitingTeam){
@@ -78,8 +79,9 @@ public class TeamPlayer {
 	public String getSaveString()
 	{
 		String save = "";
-		String date = "LastOnline: '" + LastSeen.get(Calendar.MONTH)+"/"+LastSeen.get(Calendar.DATE)+"/"+LastSeen.get(Calendar.YEAR)+"'";
-		save = "{" + date +", " + "ELO: '" + ELO + "'}";
+		int month = LastSeen.get(Calendar.MONTH)+1;
+		String date = "LastOnline: '" + month+"/"+LastSeen.get(Calendar.DATE)+"/"+LastSeen.get(Calendar.YEAR)+"'";
+		save = "{" + date +"}";
 		
 		
 		return save;

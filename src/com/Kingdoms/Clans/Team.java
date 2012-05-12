@@ -196,7 +196,19 @@ public class Team {
 	public String getTeamTag(){
 		return TeamTag;
 	}
-	
+	public void leaderInactivePromotionCascade()
+	{
+		if(TeamList.get(0).getTierSize() <= 1)
+		{
+			int i = TeamList.size();
+			while(i > 1)
+			{
+				massRankMove(i,i-1);
+				i--;
+			}
+			
+		}	
+	}
 	public void massRankMove(int start, int finish){
 		HashSet<String> temp = new HashSet<String>();
 		temp = TeamList.get(start -1).getRankMembers();
@@ -205,7 +217,6 @@ public class Team {
 			TeamList.get(finish-1).add(member);
 		}
 	}
-	
 	public void setTeamTag(String Tagin){
 		TeamTag = Tagin;
 	}

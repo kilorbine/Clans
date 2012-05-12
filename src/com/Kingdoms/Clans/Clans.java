@@ -7,11 +7,13 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Reader;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Set;
 import java.util.logging.Logger;
 
 import org.bukkit.Bukkit;
@@ -64,14 +66,14 @@ public class Clans extends JavaPlugin {
         //Config
         config = new ClansConfig();
         
-        
+        //Register Events
 		PluginManager pm = Bukkit.getPluginManager();
         pm.registerEvents(playerListener, this);
         pm.registerEvents(blockListener, this);
         
         //if(config.UseTags())
         	//pm.registerEvent(Event.PLAYER_CHAT, playerListener, EventPriority.NORMAL, this);
-        	//Fix this shit
+        	//Fix this
         
 		//Team File
 		TeamsFile = new File("plugins/Clans/Teams.yml");
@@ -81,7 +83,12 @@ public class Clans extends JavaPlugin {
 		AreasFile = new File("plugins/Clans/Areas.yml");
 		//Load Data From Files
 		loadData();
+		
+		//Count Online Team Players, Used during reloads
 		countOnlineTeamPlayers();
+		
+		//Clears inactive players and teams from the files
+		clearInactivity();
 		
 		resistIDCount = 0;
 		
@@ -93,8 +100,6 @@ public class Clans extends JavaPlugin {
 		ResetAllResistBlocks();
 		log.info("Clans disabled.");
 	}
-
-
 	public boolean onCommand(CommandSender sender, Command cmd, String commandLabel, String[] args)
 	{
 		String commandName = cmd.getName().toLowerCase();
@@ -757,6 +762,8 @@ public class Clans extends JavaPlugin {
             				for(String mem : members)
             					Users.get(mem).clearTeamKey();
             				Teams.remove(TeamKey);
+            				if(Areas.containsKey(TeamKey))
+            					Areas.remove(TeamKey);
             				
             				player.sendMessage(ChatColor.GREEN + "Your team has been succesfully disbanded.");
             				saveTeams();
@@ -1255,26 +1262,6 @@ public class Clans extends JavaPlugin {
 	  				messageTeam(teamKey,ChatColor.DARK_GREEN + PlayerName + ": " + ChatColor.GREEN  + message);    				 
    			 	}
             }
-            else if(commandName.equals("elo"))//maybe change ELO to ratings?
-            {
-            	if(args[0].toUpperCase() == "LIST")
-            	{
-            		
-            	}
-            	else
-            	{
-            		//Must be a player name
-            	}
-            }
-            else if(commandName.equals("rules"))
-            {
-            	player.sendMessage(ChatColor.DARK_RED + "Rules:");
-            	player.sendMessage(ChatColor.RED + "1. Do not use cheats or client modifications that provide you with an unfair advantage.");
-            	player.sendMessage(ChatColor.RED + "2. Do not log out in order to avoid combat with another player.");
-            	player.sendMessage(ChatColor.RED + "3. Do not spam chat.");
-            	player.sendMessage(ChatColor.GREEN + "Allowed: Total destruction, looting, and killing.");
-            	player.sendMessage(ChatColor.AQUA + "Note: Creating a team requires signup on our forum at http://KingdomsMC.com");
-            }
             else
             {
             	return true;
@@ -1400,13 +1387,12 @@ public class Clans extends JavaPlugin {
         	{
         		HashMap<String,String> PlayerData = pl.get(key);
         		String[] sDate = PlayerData.get("LastOnline").split("/");
-        		int month = Integer.parseInt(sDate[0]);
+        		int month = Integer.parseInt(sDate[0])-1;
         		int day = Integer.parseInt(sDate[1]);
         		int year = Integer.parseInt(sDate[2]);
         		Calendar cal = Calendar.getInstance();
         		cal.set(year, month, day);
-        		int elo = Integer.parseInt(PlayerData.get("ELO"));
-        		Users.put(key, new TeamPlayer(elo, cal, config.TeamTKDefault()));
+        		Users.put(key, new TeamPlayer(cal, config.TeamTKDefault()));
         	}
         }
 		/*
@@ -1462,10 +1448,14 @@ public class Clans extends JavaPlugin {
     			   //Add TeamKeys to all Members
     			   if(Tier.get("Members") != null){
     				   HashSet<String> Mems = new HashSet<String>((ArrayList<String>)Tier.get("Members"));
-    			   
-    				   for(String PlayerName : Mems)
-    					   Users.get(PlayerName).setTeamKey(key);
-    			   
+    				   
+    				   HashSet<String> MemsCopy = Mems;
+    				   for(String PlayerName : MemsCopy) {
+    					   if(Users.containsKey(PlayerName))
+    						   Users.get(PlayerName).setTeamKey(key);
+    					   else
+    						   Mems.remove(PlayerName);
+    				   }
     				   //Add Tier to TeamList
     				   TeamList.add(new TierList(newRank, Mems));
     			   }
@@ -1538,6 +1528,70 @@ public class Clans extends JavaPlugin {
             }
     	   
        }
+	}
+	public void clearInactivity()
+	{
+		Set<String> users2 = new HashSet<String>(Users.keySet());
+		for(String PName : users2)
+		{
+			if(isPlayerInactive(PName)) //delete from team and users
+			{
+				if(Users.get(PName).hasTeam())
+				{
+					if(getTeam(PName).getTeamSize() <= 1)//if last one in team, disband team
+					{
+        				String TeamKey = Users.get(PName).getTeamKey();
+        				ArrayList<String> members = getTeam(PName).getAllMembers();
+        				for(String mem : members)
+        					Users.get(mem).clearTeamKey();
+        				Teams.remove(TeamKey);
+        				if(Areas.containsKey(TeamKey))
+        					Areas.remove(TeamKey);
+					}
+					else
+					{
+						String TeamKey = Users.get(PName).getTeamKey();
+						if(getTeam(PName).isLeader(PName)) //promote others in place
+							Teams.get(TeamKey).leaderInactivePromotionCascade();
+						Teams.get(TeamKey).removeMember(PName);
+					}
+				}
+				Users.remove(PName);
+			}
+		}
+		savePlayers();
+		saveTeams();
+		saveAreas();
+	}
+	public boolean isPlayerInactive(String PlayerName)
+	{
+		//add check that they arent on a special list
+		if(config.isPlayerExempt(PlayerName) || config.getCleanPlayerDays() == 0)
+			return false;
+
+		Calendar lastseen = Users.get(PlayerName).getLastSeen();
+		
+	       /*SimpleDateFormat df = new SimpleDateFormat();
+	        df.applyPattern("dd/MM/yyyy");
+	        System.out.println(df.format(lastseen.getTime()));*/
+		
+		//get current date
+		Calendar cur = Calendar.getInstance();
+		cur.set(cur.get(Calendar.YEAR), cur.get(Calendar.MONTH), cur.get(Calendar.DATE));
+		
+	      //  System.out.println(df.format(cur.getTime()));
+		
+		Calendar date = (Calendar) lastseen.clone();
+		long daysBetween = 0;
+		while (date.before(cur)) {
+			      date.add(Calendar.DAY_OF_MONTH, 1);
+			      daysBetween++;
+		}
+		  //System.out.println(PlayerName + ": " + daysBetween);
+		  if(daysBetween > config.getCleanPlayerDays())
+			  return true;
+		  else
+			  return false;
 	}
 	private void saveAreas()
 	{
@@ -1748,7 +1802,6 @@ public class Clans extends JavaPlugin {
 		}
 	}
 	public void TriggerResistanceBreak(Block block) {
-		//FIXME: Gives double obsidian if block was obsidian to start
 		if(ResistBlocks.containsKey(block.getLocation())) {
 			//Cancels Block
 			getServer().getWorld("world").getBlockAt(block.getLocation()).setType(ResistBlocks.get(block.getLocation()).getState().getType());
@@ -1805,9 +1858,8 @@ public class Clans extends JavaPlugin {
 				ResistBlocks.remove(location);
 		}
 	}
-	//scheduler reset
 	public void ResetResistBlock(Location location, int id) {
-		//FIXME: need to give blocks IDs for start so if you get rid of a block, then place it, the thread from the old block doesn't reset it
+		//need to give blocks IDs for start so if you get rid of a block, then place it, the thread from the old block doesn't reset it
 		if(ResistBlocks.containsKey(location)) {
 			if(ResistBlocks.get(location).getExtTime() == 0) {
 				//set back to normal
@@ -1821,7 +1873,6 @@ public class Clans extends JavaPlugin {
 	}
 	public void ResetAllResistBlocks()
 	{
-		//FIXME: Crashes on shutdown
 		ArrayList<Location> locs = new ArrayList<Location>(ResistBlocks.keySet());
 		for(Location location : locs)
 		{

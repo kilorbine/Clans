@@ -8,6 +8,7 @@ import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
+import java.util.HashSet;
 
 import org.yaml.snakeyaml.Yaml;
 
@@ -16,7 +17,6 @@ public class ClansConfig {
 	//General
 	private int Currency; //Added
 	private boolean UseScore; //Not Needed Yet
-	private boolean UseELO; //Not Needed Yet
 	private boolean AllowTKToggle; //Added
 	private boolean TeamTKDefault; //Added
 	
@@ -41,8 +41,7 @@ public class ClansConfig {
 	
 	//Costs
 	private int TagCost; //Added
-	private int AreaCost; //Not Needed Yet
-	private int incCapacityCost; //Not Needed Yet
+	private int AreaCost; //Added
 	private int incSizeCost; //Not Needed Yet
 	private int UPAlertsCost; //Not Needed Yet
 	private int UPDamageCost; //Not Needed Yet
@@ -58,7 +57,9 @@ public class ClansConfig {
 	private int ReqScoreCape; //Not Needed Yet
 	
 	//Clean Up
-	private int CleanPlayerDays; //Not Needed Yet
+	private int CleanPlayerDays; 
+	
+	private HashSet<String> exemptPlayers;
 	
 	
 	public ClansConfig()
@@ -67,7 +68,6 @@ public class ClansConfig {
 		//General
 		Currency = 41;
 		UseScore = true;
-		UseELO = true;
 		AllowTKToggle = true;
 		TeamTKDefault = false;
 		
@@ -93,7 +93,6 @@ public class ClansConfig {
 		//Costs
 		TagCost = 5;
 		AreaCost = 10;
-		incCapacityCost = 5;
 		incSizeCost = 10;
 		UPAlertsCost = 10;
 		UPDamageCost = 25;
@@ -111,12 +110,15 @@ public class ClansConfig {
 		//Clean Up
 		CleanPlayerDays = 14;
 		
+		//Exempt From Deletion
+		exemptPlayers = new HashSet();
+		
 		//setConfig
 		setConfig();
 	}
 	private void setConfig()
 	{
-		HashMap<String,HashMap<String,Object>> pl = null;
+		HashMap<String,Object> pl = null;
 		Yaml yamlCfg = new Yaml();
 		Reader reader = null;
         try {
@@ -132,7 +134,7 @@ public class ClansConfig {
         } finally {
             if (null != reader) {
                 try {
-                    pl = (HashMap<String,HashMap<String,Object>>)yamlCfg.load(reader);
+                    pl = (HashMap<String,Object>)yamlCfg.load(reader);
                     reader.close();
                 } catch (final IOException ioe) {
                     System.err.println("We got the following exception trying to clean up the reader: " + ioe);
@@ -141,21 +143,20 @@ public class ClansConfig {
         }
         if(pl != null)
         {
-        	HashMap<String,Object> General = pl.get("General");
+        	HashMap<String,Object> General = (HashMap<String,Object>)pl.get("General");
     		//General
     		Currency = (int) General.get("Currency");
     		UseScore = (boolean) General.get("Use Score");
-    		UseELO = (boolean) General.get("Use ELO");
     		AllowTKToggle = (boolean) General.get("Allow TK Toggle");
     		TeamTKDefault = (boolean) General.get("Team TK Default");
     		
-        	HashMap<String,Object> Chat = pl.get("Chat");
+        	HashMap<String,Object> Chat = (HashMap<String,Object>)pl.get("Chat");
     		//Chat
     		UseTags = (boolean) Chat.get("Use Tags");
     		TagFormat = (String) Chat.get("Tag Format");
     		MessageFormat = (String) Chat.get("Message Format");
     		
-        	HashMap<String,Object> Areas = pl.get("Areas");
+        	HashMap<String,Object> Areas = (HashMap<String,Object>)pl.get("Areas");
     		//Areas
     		UseAreas = (boolean) Areas.get("Use Areas");
     		AreaMaxSize = (int) Areas.get("Max Size");
@@ -170,41 +171,44 @@ public class ClansConfig {
     		ResistanceBlock = (int) Areas.get("Resistance Block");
     		UPCleanse = (boolean) Areas.get("UP Cleanser");
     		
-        	HashMap<String,Object> Costs = pl.get("Costs");
+        	HashMap<String,Object> Costs = (HashMap<String,Object>)pl.get("Costs");
     		//Costs
     		TagCost = (int) Costs.get("Tag");
     		AreaCost = (int) Costs.get("Area");
-    		incCapacityCost = (int) Costs.get("Increase Capacity");
     		incSizeCost = (int) Costs.get("Increase Size");
     		UPAlertsCost = (int) Costs.get("Alert Upgrade");
     		UPDamageCost = (int) Costs.get("Damage Upgrade");
     		UPResistCost = (int) Costs.get("Resist Upgrade");
     		UPCleanseCost = (int) Costs.get("Cleanse Upgrade");
     		
-        	HashMap<String,Object> ReqMem = pl.get("Req Member Counts");
+        	HashMap<String,Object> ReqMem = (HashMap<String,Object>)pl.get("Req Member Counts");
     		//Population Reqs
     		ReqMemColor = (int) ReqMem.get("Tag Color");
     		ReqMemArea = (int) ReqMem.get("Area");
     		
-        	HashMap<String,Object> ReqScore = pl.get("Req Score Ranks");
+        	HashMap<String,Object> ReqScore = (HashMap<String,Object>)pl.get("Req Score Ranks");
     		//Score Rank Reqs
     		ReqScoreColor = (int) ReqScore.get("Color");
     		ReqScoreCape =  (int) ReqScore.get("Cape");
     		
-        	HashMap<String,Object> Cleanup = pl.get("Clean Up");
+        	HashMap<String,Object> Cleanup = (HashMap<String,Object>)pl.get("Clean Up");
     		//Clean Up
     		CleanPlayerDays = (int) Cleanup.get("Clear Player Days");
+    		
+    		ArrayList<String> exempt = (ArrayList<String>)pl.get("Do Not Delete Players");
+    		exemptPlayers = new HashSet<String>(exempt);
         }
 		
+	}
+	public boolean isPlayerExempt(String PlayerName)
+	{
+		return exemptPlayers.contains(PlayerName);
 	}
 	public int getCurrency() {
 		return Currency;
 	}
 	public boolean UseScore() {
 		return UseScore;
-	}
-	public boolean UseELO() {
-		return UseELO;
 	}
 	public boolean AllowTKToggle() {
 		return AllowTKToggle;
@@ -253,9 +257,6 @@ public class ClansConfig {
 	}
 	public int getAreaCost() {
 		return AreaCost;
-	}
-	public int getIncCapacityCost() {
-		return incCapacityCost;
 	}
 	public int getIncSizeCost() {
 		return incSizeCost;

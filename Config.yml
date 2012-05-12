@@ -1,7 +1,6 @@
 General:
     Currency: 41
     Use Score: true
-    Use ELO: true
     Allow TK Toggle: true
     Team TK Default: false
 
@@ -20,19 +19,22 @@ Areas:
     Alert Threshold: 30
 
     UP Offline Defense: true
-    Offline Damage: 2
+    Offline Damage: 4
+    Damager Cooldown: 1000
 
     UP Block Resist: true
-    Resistance Multiplier: 3
+    Resistance Block: 49
+
+    UP Cleanser: true
 
 Costs:
     Tag: 5
     Area: 10
-    Increase Capacity: 5
     Increase Size: 10
     Alert Upgrade: 10
     Damage Upgrade: 25
     Resist Upgrade: 50
+    Cleanse Upgrade: 50
 
 Req Member Counts:
     Tag Color: 10
@@ -43,5 +45,10 @@ Req Score Ranks:
     Cape: 10
 
 Clean Up:
-    Clear Player Days: 14
+    Clear Player Days: 30
+
+Do Not Delete Players:
+    - 'SatrosWaR'
+    - 'jioji'
+    - 'chipclip'
 

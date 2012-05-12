@@ -1,6 +1,6 @@
 name: Clans
 main: com.Kingdoms.Clans.Clans
-version: 2.0.3
+version: 2.0.5
 commands:
   team:
     description: All team commands
@@ -9,16 +9,6 @@ commands:
            /<command> - lists commands
   t:
     description: Sends a message to team members
-    usage: |
-           Incorrect usage of /<command>. Examples:
-           /<command> - lists commands
-  elo:
-    description: All elo commands
-    usage: |
-           Incorrect usage of /<command>. Examples:
-           /<command> - lists commands
-  rules:
-    description: Lists server rules
     usage: |
            Incorrect usage of /<command>. Examples:
            /<command> - lists commands
@@ -109,5 +99,14 @@ permissions:
         description: Allows you to use team chat.
         default: op
     Clans.leave:
-        description: Allows you to use team chat.
+        description: Allows you to leave the team.
+        default: op
+    Clans.area.claim:
+        description: Allows you to claim an area.
+        default: op
+    Clans.area.info:
+        description: Allows you to see area info.
+        default: op
+    Clans.area.upgrade:
+        description: Allows you to upgrade an area.
         default: op

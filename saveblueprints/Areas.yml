@@ -1,0 +1,8 @@
+'Kingdom of War':
+    Type: 'Clan'
+    Name: 'City of War'
+    X: '200'
+    Z: '200'
+    Radius: '100'
+    Upgrades: {IntruderAlert: true, BlockDestroyDamage: true, BlockResistance: true, AreaCleanse: true}
+    Captor: 'Team B'
