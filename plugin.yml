@@ -41,6 +41,7 @@ permissions:
             Clans.area.claim: true
             Clans.area.info: true
             Clans.area.upgrade: true
+            Clans.area.list: true
     Clans.kick:
         description: Allows you to kick a user from your team.
         default: op
@@ -112,4 +113,7 @@ permissions:
         default: op
     Clans.area.upgrade:
         description: Allows you to upgrade an area.
+        default: op
+    Clans.area.list:
+        description: Allows you to see your captured areas.
         default: op

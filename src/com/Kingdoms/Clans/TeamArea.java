@@ -5,6 +5,7 @@ import java.util.GregorianCalendar;
 import java.util.HashSet;
 
 import org.bukkit.Location;
+import org.bukkit.entity.Player;
 
 public class TeamArea {
 
@@ -70,6 +71,30 @@ public class TeamArea {
 			if(xLoc-AreaRadius <= x && x <= xLoc+AreaRadius) {
 	    		if(zLoc-AreaRadius <= z && z <= zLoc+AreaRadius) {
 	    			isInArea = true;
+	    		}
+			}
+		}
+		return isInArea;
+	}
+	public boolean inAreaCapturable(Player p)
+	{		        
+		int x = p.getLocation().getBlockX();
+		int z = p.getLocation().getBlockZ();
+		int y = p.getLocation().getBlockY();
+		
+		//inner 1/2
+		int capRadius = AreaRadius / 2;
+		if(capRadius*2 <= 50)
+			capRadius = 25;
+		
+		
+		String worldname = p.getWorld().getName();
+		boolean isInArea = false;
+		if(world.equalsIgnoreCase(worldname)) {
+			if(xLoc-capRadius <= x && x <= xLoc+capRadius) {
+	    		if(zLoc-capRadius <= z && z <= zLoc+capRadius) {
+	    			if(y > 50)
+	    				isInArea = true;
 	    		}
 			}
 		}

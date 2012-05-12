@@ -1,5 +1,9 @@
 Clans v3 by Satros & Jioji
 
+Note: To develop you will need craftbukkit and snakeyaml added to your referenced libraries.
+http://dl.bukkit.org
+http://code.google.com/p/snakeyaml/
+
 Features:
 Teams
 Team Chat
