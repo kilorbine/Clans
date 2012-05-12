@@ -12,6 +12,16 @@ commands:
     usage: |
            Incorrect usage of /<command>. Examples:
            /<command> - lists commands
+  cap:
+    description: Starts a siege on a team's area
+    usage: |
+           Incorrect usage of /<command>. Examples:
+           /<command> - lists commands
+  capture:
+    description: Starts a siege on a team's area
+    usage: |
+           Incorrect usage of /<command>. Examples:
+           /<command> - lists commands
 permissions:
     Clans.*:
         description: Gives access to all commands
