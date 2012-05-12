@@ -38,6 +38,9 @@ permissions:
             Clans.motd: true
             Clans.teamchat: true
             Clans.leave: true
+            Clans.area.claim: true
+            Clans.area.info: true
+            Clans.area.upgrade: true
     Clans.kick:
         description: Allows you to kick a user from your team.
         default: op

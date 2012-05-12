@@ -684,7 +684,7 @@ public class Clans extends JavaPlugin {
             					Teams.get(tPlayer.getTeamKey()).getRank(Integer.parseInt(args[1])).setCanInvite(Boolean.parseBoolean(args[3]));
             					saveTeams();
             					break;
-            				case "PROMOTE":
+            				case "RANKSET":
             					Teams.get(tPlayer.getTeamKey()).getRank(Integer.parseInt(args[1])).setCanSetRanks(Boolean.parseBoolean(args[3]));
             					saveTeams();
             					break;
@@ -911,7 +911,7 @@ public class Clans extends JavaPlugin {
                    			player.sendMessage(ChatColor.RED + "/team rankset <playername> <ranknumber>"+ChatColor.GRAY +" - Sets the rank of a team member.");
                    			player.sendMessage(ChatColor.RED + "/team rankmassmove <oldranknumber> <newranknumber>"+ChatColor.GRAY +" - Moves all members of a rank to a new rank.");
                    			player.sendMessage(ChatColor.RED + "/team rankinfo <ranknumber>"+ChatColor.GRAY +" - Outputs a rank's permissions.");
-                   			player.sendMessage(ChatColor.RED + "/team rankpermission <ranknumber> <kick/teamchat/rankedit/invite/promote> <true/false>"+ChatColor.GRAY +" - Sets a rank's permissions.");
+                   			player.sendMessage(ChatColor.RED + "/team rankpermission <ranknumber> <kick/teamchat/rankedit/invite/rankset/areainfo> <true/false>"+ChatColor.GRAY +" - Sets a rank's permissions.");
                    			player.sendMessage(ChatColor.RED + "/team rankdelete <ranknumber>"+ChatColor.GRAY +" - Deletes a rank.");
                    		}
                    		else if(args[1].equalsIgnoreCase("4")) {

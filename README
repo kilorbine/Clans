@@ -7,7 +7,8 @@ Team Tags and Colors
 Rankings within Teams
 Team Areas
 Anti Friendly Fire
-Team Score
+Team Scores
+Auto Inactive Player Cleanup
 
 Classes:
 Clans - Main plugin class, with commands, data structures, etc.
@@ -15,11 +16,11 @@ Team - Stores all of a Team's data.
 TeamArea - TeamArea data and functions.
 TeamPlayer - Stores all a Players data
 Rank - Stores rank permissions.
-ELO - Stores ELO data of a player.
 Config - Stores all plugin settings.
 ClansPlayerListener - Player chat, join, and leave listeners.
 ClansBlockListener - Block placement, destroy, damage, etc listeners.
-ClansEntityListener - Used for determining if a attacked entity is a Teammate (Friendly Fire). 
+ResistantBlock - Special class that turns blocks to obsidian
+TierList - Stores all team player list and rank order data
 
 Commands:
 /team create <Team Name>					//Creates a team
@@ -33,10 +34,7 @@ Commands:
 /team leave							//Leave a team
 /team tk <on|off>						//Toggles friendly fire
 
-/team topscorelist						//Prints the top 5 teams based on score
-/elo list							//Prints top 5 players based on elo
 /team score <_|TeamName>					//Prints the score of the team
-/elo <PlayerName>						//Prints the elo of a player
 
 /team kick <PlayerName>						//Kicks a player from a team
 /team rcreate <RankName>					//Creates a new rank at the bottom of the team structure
@@ -44,13 +42,12 @@ Commands:
 /team rrename <RankNumber> <RankName>				//Sets a rank's name
 /team rmassmove <OldRankNumber> <NewRankNumber>			//Moves all players of a rank to another
 /team rinfo <RankNumber>					//Prints permissions of a rank
-/team rpermission <RankNumber> <Permission> <Allow|Deny>	//Sets a permission of a rank
+/team rpermission <RankNumber> <Permission> <True|False>	//Sets a permission of a rank, available permissions: Kick, TeamChat, RankEdit, Invite, AreaInfo
 /team rdelete <RankNunber>					//Removes a rank, all players inside wil lbe moved to the bottom rank
 
 /team area info							//Prints a team's area info
 /team area claim <AreaName>					//Purchases a team area
-/team area upgrade <blockresist|blockdamage|intruderalert>	//Purchases an area upgrade
-/team area incsize <GoldAmount>					//Increases area size based on amount of currency
+/team area upgrade <Size|Alerter|Damager|Resistance|Cleanser>	//Purchases an area upgrade
 /capture | /cap							//Places an area under seige
 /team arealist							//Prints all captured areas by a team
 
@@ -59,7 +56,7 @@ Commands:
 /team color <Color>						//Sets a team's color
 /team motd <_|Message>						//Sets a team's Message of the Day, prints if no argument.
 
-/team help <1|2|3|4>						//Prints commands and how to use them
+/team help <1|2|3|4|5>						//Prints commands and how to use them
 
 
 Other mechanics:
