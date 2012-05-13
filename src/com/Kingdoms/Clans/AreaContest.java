@@ -43,12 +43,13 @@ public class AreaContest implements Runnable{
     	int[] res = plugin.countInCapturableArea(area, defendingTeam, attackingTeam);
     	
     	hitpoints += res[0];
+    	//System.out.println(hitpoints);
     	
     	if(res[1] == 0 && res[2] == 0)
     		timeout++;
-    	if(timeout <= 12)
+    	if(timeout >= 12)
     		plugin.declareWinner(area, defendingTeam, attackingTeam, defendingTeam);
-    	if(hitpoints <= 0) //attackers win
+    	else if(hitpoints <= 0) //attackers win
     	{
     		//declare attackers
     		plugin.declareWinner(area, defendingTeam, attackingTeam, attackingTeam);
@@ -61,7 +62,7 @@ public class AreaContest implements Runnable{
     	else
     	{
     		//continue
-    		plugin.continueSiege(area, defendingTeam, defendingTeam);
+    		plugin.continueSiege(area, defendingTeam, attackingTeam);
     		printCount++;
     		printTotal += res[0];
     	}
@@ -70,6 +71,7 @@ public class AreaContest implements Runnable{
     		//print current core
     		plugin.printSiegeProgress(area, defendingTeam, attackingTeam, res[2], res[1], hitpoints, printTotal);
     		printCount = 0;
+    		printTotal = 0;
     	}
     	
 

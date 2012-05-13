@@ -1256,7 +1256,7 @@ public class Clans extends JavaPlugin {
 	                				{
 	                					if(tkey.equalsIgnoreCase(Areas.get(a).getHolder()))
 	                					{
-	                						player.sendMessage(ChatColor.GREEN + getTeam(a).getTeamTag() + " - " + getArea(a).getAreaName());
+	                						player.sendMessage(ChatColor.GREEN + Teams.get(a).getTeamTag() + " - " + getArea(a).getAreaName());
 	                						player.sendMessage(ChatColor.GREEN  + "     X:" + getArea(a).getxLoc() + " Z:" + getArea(a).getzLoc());
 	                						any = true;
 	                					}
@@ -1340,8 +1340,8 @@ public class Clans extends JavaPlugin {
    			 		ContestedAreas.put(key, new AreaContest(this, area, getArea(area).getHolder(), tPlayer.getTeamKey()));
    			 		getServer().getScheduler().scheduleSyncDelayedTask(this, ContestedAreas.get(key), 200L);
    			 		//send message
-   			 		getServer().broadcastMessage(ChatColor.AQUA + "[RAID] " + ChatColor.YELLOW + tPlayer.getTeamKey() + ChatColor.GOLD +" has besieged " +
-   			 		getArea(area).getAreaName() + ", currently held by " + ChatColor.YELLOW +getArea(area).getHolder() + ChatColor.GOLD +".");
+   			 		getServer().broadcastMessage(ChatColor.DARK_RED + "[RAID] " + ChatColor.YELLOW + tPlayer.getTeamKey() + ChatColor.GOLD +" has besieged " + 
+   			 				getArea(area).getAreaName() + ", currently held by " + ChatColor.YELLOW +getArea(area).getHolder() + ChatColor.GOLD +".");
    			 	}
             }
             else
@@ -1370,13 +1370,17 @@ public class Clans extends JavaPlugin {
 	}
 	public void printSiegeProgress(String area, String defenders, String attackers,int numAtt, int numDef, int hp, int change)
 	{
-		/*
+		
 		int diffDef = numDef - numAtt;
 		int diffAtt = numAtt - numDef;
-		*/
+		
+		change = Math.abs(change);
 		
 		//print to attackers
-		String msg = ChatColor.GOLD + " [ "+numAtt+"v"+numDef+" | "+change + "pt] Capture Progress: ["+ChatColor.GREEN;
+		String msg = ChatColor.GOLD + " ["+numAtt+"v"+numDef+" | ";
+		if(diffAtt < 0)
+			msg += "-";
+		msg += change + "pt] Capture Progress: ["+ChatColor.GREEN;
 		int i = 0;
 		for(i=0;i<(100-hp);i++) {
 			if(i % 5 == 0)
@@ -1387,12 +1391,15 @@ public class Clans extends JavaPlugin {
 			if(i % 5 == 0)
 				msg+="|";
 		}
-		int pct = (int)(10 *(double)((100-hp)/100));
+		int pct = (int) (100 *((double)(100-hp)/100));
 		msg += ChatColor.GOLD + "] " + pct + "%";
 		messageTeam(attackers, msg);
 		
 		//print to defenders
-		msg = ChatColor.GOLD + " [ "+numDef+"v"+numAtt+" | "+change + "pt] Defend Progress: ["+ChatColor.GREEN;
+		msg = ChatColor.GOLD + " ["+numDef+"v"+numAtt+" | ";
+		if(diffDef < 0)
+			msg += "-";
+		msg += change + "pt] Defend Progress: ["+ChatColor.GREEN;
 		i = 0;
 		for(i=0;i<hp;i++) {
 			if(i % 5 == 0)
@@ -1403,9 +1410,9 @@ public class Clans extends JavaPlugin {
 			if(i % 5 == 0)
 				msg+="|";
 		}
-		pct = (int)(10 *(double)(hp/100));
+		pct = (int) (100 *((double)hp/100));
 		msg += ChatColor.GOLD + "] " + pct + "%";
-		messageTeam(attackers, msg);
+		messageTeam(defenders, msg);
 
 	}
 	public void declareWinner(String area, String defenders, String attackers, String winner)
@@ -1414,15 +1421,17 @@ public class Clans extends JavaPlugin {
 		if(winner.equalsIgnoreCase(attackers))
 		{
 			//attackers win message
-		 	getServer().broadcastMessage(ChatColor.AQUA + "[RAID] " + ChatColor.GREEN + winner + ChatColor.GOLD +" has sucessfully captured " + getArea(area).getAreaName() + " from " + ChatColor.RED + defenders + ChatColor.GOLD +".");
+		 	getServer().broadcastMessage(ChatColor.DARK_RED + "[RAID] " + ChatColor.GREEN + winner + ChatColor.GOLD +" has successfully captured " + getArea(area).getAreaName() + " from " + ChatColor.RED + defenders + ChatColor.GOLD +".");
+		 	
 		}
 		else //defenders won
 		{
 			//defenders win message
-		 	getServer().broadcastMessage(ChatColor.AQUA + "[RAID] " + ChatColor.GREEN + winner + ChatColor.GOLD +" has sucessfully defended " + getArea(area).getAreaName() + " against " + ChatColor.RED + attackers + ChatColor.GOLD +".");
+		 	getServer().broadcastMessage(ChatColor.DARK_RED + "[RAID] " + ChatColor.GREEN + winner + ChatColor.GOLD +" has successfully defended " + getArea(area).getAreaName() + " against " + ChatColor.RED + attackers + ChatColor.GOLD +".");
 		}
 		String key = area+":"+defenders+":"+attackers;
 		ContestedAreas.remove(key);
+		saveAreas();
 		//remove from contests
 	}
 	public int[] countInCapturableArea(String area, String defenders, String attackers)
@@ -1435,14 +1444,15 @@ public class Clans extends JavaPlugin {
 			String userTeamKey = Users.get(p.getDisplayName()).getTeamKey();
 			if(userTeamKey.equals(attackers)) {
 				if(Areas.get(area).inAreaCapturable(p))
-					results[1]++;
+					results[2]++;
 			}
 			if(userTeamKey.equals(defenders)) {
 				if(Areas.get(area).inAreaCapturable(p))
-					results[2]++;
+					results[1]++;
 			}
 		}
 		results[0] = results[1] - results[2]; //defense - attack
+		//System.out.println(results[0]);
 		return results;
 	}
 	//Finds a team area given a point, returns the team name who owns the area if found
