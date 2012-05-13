@@ -52,6 +52,11 @@ permissions:
             Clans.area.info: true
             Clans.area.upgrade: true
             Clans.area.list: true
+            Clans.area.upgrade: true
+            Clans.area.list: true
+            Clans.area.capture: true
+            Clans.score: true
+            Clans.topscores: true
     Clans.kick:
         description: Allows you to kick a user from your team.
         default: op
@@ -126,4 +131,13 @@ permissions:
         default: op
     Clans.area.list:
         description: Allows you to see your captured areas.
+        default: op
+    Clans.area.capture:
+        description: Allows you to besiege other team's areas.
+        default: op
+    Clans.score:
+        description: Allows to see the score of teams.
+        default: op
+    Clans.topscores:
+        description: Allows to see the top scoring teams.
         default: op

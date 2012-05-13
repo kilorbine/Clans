@@ -13,7 +13,9 @@ import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.logging.Logger;
 
 import org.bukkit.Bukkit;
@@ -32,7 +34,7 @@ import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.yaml.snakeyaml.Yaml;
-
+import java.util.Comparator;
 
 
 public class Clans extends JavaPlugin {
@@ -90,6 +92,11 @@ public class Clans extends JavaPlugin {
 		
 		//Clears inactive players and teams from the files
 		clearInactivity();
+		
+		if(config.UseScore() && config.UseAreas())
+		{
+			startScoreKeeper();
+		}
 		
 		resistIDCount = 0;
 		
@@ -281,6 +288,8 @@ public class Clans extends JavaPlugin {
             				 else {//DISPLAY INFO
             					 Team team = Teams.get(tPlayer.getTeamKey());
             					 player.sendMessage(team.getColor() + "[" + tPlayer.getTeamKey() + "]" + " Team Info" );
+            					 if(config.UseScore())
+            						 player.sendMessage(team.getColor() + "Team Score: " + team.getTeamScore() );
             					 ArrayList<String> teamInfo = team.getTeamInfo();
             					 for(String s : teamInfo)
             						 player.sendMessage(s);
@@ -298,6 +307,8 @@ public class Clans extends JavaPlugin {
             				else {
             					Team team = Teams.get(TeamName);
             					player.sendMessage(team.getColor() + "[" + TeamName + "]" + " Team Info" );
+           					 	if(config.UseScore())
+           					 		player.sendMessage(team.getColor() + "Team Score: " + team.getTeamScore() );
            					 	ArrayList<String> teamInfo = team.getTeamInfo();
            					 	for(String s : teamInfo)
            					 		player.sendMessage(s);
@@ -389,11 +400,100 @@ public class Clans extends JavaPlugin {
                 	/* ==============================================================================
                 	 *	TEAM TOPSCORELIST - Prints the top 5 teams based on score
                 	 * ============================================================================== */
-            		case "TOPSCORES": case "TOP": case "SB": break;
+            		case "TOPSCORES": case "TOP": case "SB": 
+               			if(!player.hasPermission("Clans.topscores")) {
+            				player.sendMessage(ChatColor.RED + "You do not have permission to use this command.");
+            				return true;
+            			}
+            			else if (!config.UseScore()) {
+            				player.sendMessage(ChatColor.RED + "Team scores are disabled.");
+            				return true;
+            			}
+            			else
+            			{
+            				//SORT LIST
+            				int listSize = 5;
+            				
+            				class TeamScoreNode {
+            					String TeamName;
+            					int TeamScore;
+            					public TeamScoreNode (String tn, int ts) {
+            						TeamName = tn;
+            						TeamScore = ts;
+            					}
+            				}
+            				ArrayList<TeamScoreNode> TopTeams = new ArrayList<TeamScoreNode>();
+            				boolean start = false;
+            				for(String teamName : Teams.keySet())
+            				{
+            					int ts = Teams.get(teamName).getTeamScore();
+            					TopTeams.add(new TeamScoreNode(teamName,ts));
+            					if(start) {
+            						for(int i = TopTeams.size()-1; i >= 1; i--)
+            						{
+            							if(TopTeams.get(i-1).TeamScore < TopTeams.get(i).TeamScore)
+            							{
+            								TeamScoreNode temp = TopTeams.get(i);
+            								TopTeams.set(i, TopTeams.get(i-1));
+            								TopTeams.set(i-1, temp);
+            							}
+            							else
+            							{
+            								if(TopTeams.size() >= listSize+1)
+            									TopTeams.remove(TopTeams.size()-1);
+            								break;
+            							}
+            						}
+            					}
+            					start = true;;
+            				}
+            				//PRINT TEAMS AND SCORES
+            				player.sendMessage(ChatColor.GOLD + "Top " +listSize+ " Teams:");
+            				int ranking = 1;
+            				for(TeamScoreNode tsn : TopTeams)
+            				{
+            					player.sendMessage(ChatColor.GRAY +""+ ranking +". "  +tsn.TeamScore + "Pts  -  "+Teams.get(tsn.TeamName).getColor() + tsn.TeamName);
+            					ranking++;
+            				}
+            			}
+            			break;
                 	/* ==============================================================================
                 	 *	TEAM SCORE - Prints the score of the team
                 	 * ============================================================================== */
-            		case "SCORE": break;
+            		case "SCORE": 
+            			if(!player.hasPermission("Clans.score")) {
+            				player.sendMessage(ChatColor.RED + "You do not have permission to use this command.");
+            				return true;
+            			}
+            			else if (!config.UseScore()) {
+            				player.sendMessage(ChatColor.RED + "Team scores are disabled.");
+            				return true;
+            			}
+            			else if(args.length == 1){//DISPLAY YOUR TEAM INFO
+            				 if(!tPlayer.hasTeam()){//DOESNT HAVE TEAM
+            					 player.sendMessage(ChatColor.RED + "You are not in a team. Use /team score <TEAMNAME> to look up a team's info.");
+            					 return true;
+            				 }
+            				 else {//DISPLAY INFO
+            					 Team team = Teams.get(tPlayer.getTeamKey());
+            					 player.sendMessage(team.getColor() + "[" + tPlayer.getTeamKey() + "]" + " Team Score: " + team.getTeamScore() );
+            				 }	 
+            			}
+            			else {//DISPLAY OTHER TEAM INFO
+            				int i;
+            				String TeamName = args[1];
+            				for (i=2;i<args.length;i++)
+            					TeamName += " " + args[i];
+            				if(!Teams.containsKey(TeamName)) {//NAME DOESNT EXIST
+            					player.sendMessage(ChatColor.RED + "Team '"+TeamName+"' does not exist.");
+            					return true;
+            				}
+            				else {
+            					Team team = Teams.get(TeamName);
+           					 	player.sendMessage(team.getColor() + "[" + TeamName + "]" + " Team Score: " + team.getTeamScore() );
+            				}
+            			}	
+            			break;
                 	/* ==============================================================================
                 	 *	TEAM KICK - Kicks a player from a team
                 	 * ============================================================================== */
@@ -759,15 +859,9 @@ public class Clans extends JavaPlugin {
             			}
             			else {//DISBAND TEAM
             				String TeamKey = tPlayer.getTeamKey();
-            				ArrayList<String> members = getTeam(PlayerName).getAllMembers();
-            				for(String mem : members)
-            					Users.get(mem).clearTeamKey();
-            				Teams.remove(TeamKey);
-            				if(Areas.containsKey(TeamKey))
-            					Areas.remove(TeamKey);
-            				
+            				disbandTeam(TeamKey);
             				player.sendMessage(ChatColor.GREEN + "Your team has been succesfully disbanded.");
-            				saveTeams();
+
             			}
             			break;
                 	/* ==============================================================================
@@ -1355,6 +1449,54 @@ public class Clans extends JavaPlugin {
         	return true;
         }
 	}
+	private void disbandTeam(String TeamKey) {
+		
+		ArrayList<String> members = Teams.get(TeamKey).getAllMembers();
+		for(String mem : members)
+			Users.get(mem).clearTeamKey();
+		Teams.remove(TeamKey);
+		
+		//Search through the areas, if this team holds any, return to original owner
+		for(String areaTeam : Areas.keySet())
+		{
+			if(Areas.get(areaTeam).getHolder().equalsIgnoreCase(TeamKey))
+				Areas.get(areaTeam).setHolder(areaTeam);
+		}
+		
+		if(Areas.containsKey(TeamKey))
+			Areas.remove(TeamKey);
+		saveTeams();
+		saveAreas();
+		
+	}
+	public void startScoreKeeper()
+	{
+		getServer().getScheduler().scheduleAsyncRepeatingTask(this, new Runnable() {
+
+			   public void run() {
+				   //tally score
+				   for(String area : Areas.keySet())
+				   {
+					   String holder = Areas.get(area).getHolder();
+					   if(Teams.containsKey(holder))
+					   {
+						   int score = Areas.get(area).getAreaRadius() * 2;
+						   if(holder.equalsIgnoreCase(area))// score * 2 if online, score * 1 if offline
+						   {
+							   if(Teams.get(holder).getOnlineCount() > 0)
+								   score=score*2;
+							   else
+								   score=score/2;
+							   Teams.get(holder).addScore(score);
+						   }
+						   else if (Teams.get(holder).getOnlineCount() > 0)
+							   Teams.get(holder).addScore(score);
+						   messageTeam(holder, ChatColor.GOLD + "Your team has received " + score + "pts for holding " + Areas.get(area).getAreaName());
+					   }
+				   }
+			   }
+			}, 18000L, 36000L);
+	}
 	public void continueSiege(String area, String defenders, String attackers)
 	{
 		String key = area+":"+defenders+":"+attackers;
@@ -1723,12 +1865,7 @@ public class Clans extends JavaPlugin {
 					if(getTeam(PName).getTeamSize() <= 1)//if last one in team, disband team
 					{
         				String TeamKey = Users.get(PName).getTeamKey();
-        				ArrayList<String> members = getTeam(PName).getAllMembers();
-        				for(String mem : members)
-        					Users.get(mem).clearTeamKey();
-        				Teams.remove(TeamKey);
-        				if(Areas.containsKey(TeamKey))
-        					Areas.remove(TeamKey);
+        				disbandTeam(TeamKey);
 					}
 					else
 					{

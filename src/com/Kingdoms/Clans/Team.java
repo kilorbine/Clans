@@ -383,5 +383,11 @@ public boolean validateColor(String Colorin){
 	public int getOnlineCount() {
 		return OnlineCount;
 	}
+	public void addScore(int score) {
+		TeamScore += score;
+	}
+	public int getTeamScore() {
+		return TeamScore;
+	}
 
 }
