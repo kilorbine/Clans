@@ -1,4 +1,4 @@
-package com.Kingdoms.Clans;
+package com.Satrosity.Clans;
 
 import java.util.Calendar;
 import java.util.GregorianCalendar;
@@ -66,6 +66,23 @@ public class TeamArea {
 	}
 	public boolean inArea(int x, int z, String worldname)
 	{		        
+		boolean isInArea = false;
+		if(world.equalsIgnoreCase(worldname)) {
+			if(xLoc-AreaRadius <= x && x <= xLoc+AreaRadius) {
+	    		if(zLoc-AreaRadius <= z && z <= zLoc+AreaRadius) {
+	    			isInArea = true;
+	    		}
+			}
+		}
+		return isInArea;
+	}
+	public boolean inArea(Player p)
+	{
+		int x = p.getLocation().getBlockX();
+		int z = p.getLocation().getBlockZ();
+		int y = p.getLocation().getBlockY();
+		String worldname = p.getWorld().getName();
+		
 		boolean isInArea = false;
 		if(world.equalsIgnoreCase(worldname)) {
 			if(xLoc-AreaRadius <= x && x <= xLoc+AreaRadius) {
@@ -200,6 +217,10 @@ public class TeamArea {
 	}
 	public HashSet<Location> getCleanseData() {
 		return Cleanser;
+	}
+	public void clearCleanseData()
+	{
+		Cleanser = new HashSet<Location>();
 	}
 	public boolean hasDamagerKey(String playername) {
 		return DamagerKeys.contains(playername);

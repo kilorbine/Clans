@@ -1,4 +1,4 @@
-package com.Kingdoms.Clans;
+package com.Satrosity.Clans;
 
 import org.bukkit.block.BlockState;
 

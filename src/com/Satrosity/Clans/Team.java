@@ -1,4 +1,4 @@
-package com.Kingdoms.Clans;
+package com.Satrosity.Clans;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -14,16 +14,18 @@ public class Team {
 	private String TeamMOTD;
 	private int TeamScore;
 	private String TeamTag;
+	private String TeamCapeUrl;
 	
 	private int OnlineCount;
 	
 	//Read in from file
-	public Team(ArrayList<TierList> TLin, String MOTDin, int Scorein, String Tagin, String Colorin)
+	public Team(ArrayList<TierList> TLin, String MOTDin, int Scorein, String Tagin, String Colorin, String Capein)
 	{
 		TeamList = TLin;
 		TeamMOTD = MOTDin;
 		TeamScore = Scorein;
 		TeamTag = Tagin;
+		TeamCapeUrl = Capein;
 		TeamColor = interpretColor(Colorin);
 		OnlineCount = 0;
 	}
@@ -43,6 +45,7 @@ public class Team {
 		TeamList.add(new TierList(MemberRank));
 		
 		TeamMOTD = "";
+		TeamCapeUrl = "";
 		TeamScore = 0;
 		TeamTag = "";
 		TeamColor = interpretColor("GRAY");
@@ -225,6 +228,7 @@ public class Team {
 		String save = "";
 		save += "    Tag: '" + TeamTag + "'\n";
 		save += "    Color: '" + reverseInterpretColor(TeamColor) + "'\n";
+		save += "    Cape: '" + TeamCapeUrl + "'\n";
 		save += "    Motd: '" + TeamMOTD + "'\n";
 		save += "    Score: '" + TeamScore + "'\n";
 		save += "    List:\n";
@@ -324,6 +328,12 @@ public boolean validateColor(String Colorin){
 		     }
 		return c;
 		}
+	public String getTeamCapeUrl() {
+		return TeamCapeUrl;
+	}
+	public void setTeamCapeUrl(String teamCapeUrl) {
+		TeamCapeUrl = teamCapeUrl;
+	}
 	private String reverseInterpretColor(ChatColor Colorin) {
 
 		String c = "";

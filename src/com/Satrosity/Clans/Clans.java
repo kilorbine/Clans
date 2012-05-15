@@ -1,4 +1,4 @@
-package com.Kingdoms.Clans;
+package com.Satrosity.Clans;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -7,6 +7,13 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Reader;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -33,7 +40,10 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.getspout.spoutapi.player.SpoutPlayer;
 import org.yaml.snakeyaml.Yaml;
+
+
 import java.util.Comparator;
 
 
@@ -43,11 +53,14 @@ public class Clans extends JavaPlugin {
 	private HashMap<String, TeamPlayer> Users = new HashMap<String, TeamPlayer>();
 	private HashMap<String, Team> Teams = new HashMap<String, Team>(); 
 	private HashMap<String, TeamArea> Areas = new HashMap<String, TeamArea>();
+	private ArrayList<BlackArea> BlacklistedAreas = new ArrayList<BlackArea>();
+	
 
 	//Files
 	private File TeamsFile;
 	private File PlayersFile;
 	private File AreasFile;
+	private File BlacklistFile;
 
 	//Logger
 	private Logger log = Logger.getLogger("Minecraft");//Define your logger
@@ -84,6 +97,8 @@ public class Clans extends JavaPlugin {
 		PlayersFile = new File("plugins/Clans/Players.yml");
 		//Areas File
 		AreasFile = new File("plugins/Clans/Areas.yml");
+		//Blacklist Area File
+		BlacklistFile = new File("plugins/Clans/BlacklistAreas.yml");
 		//Load Data From Files
 		loadData();
 		
@@ -414,14 +429,6 @@ public class Clans extends JavaPlugin {
             				//SORT LIST
             				int listSize = 5;
             				
-            				class TeamScoreNode {
-            					String TeamName;
-            					int TeamScore;
-            					public TeamScoreNode (String tn, int ts) {
-            						TeamName = tn;
-            						TeamScore = ts;
-            					}
-            				}
             				ArrayList<TeamScoreNode> TopTeams = new ArrayList<TeamScoreNode>();
             				boolean start = false;
             				for(String teamName : Teams.keySet())
@@ -447,6 +454,7 @@ public class Clans extends JavaPlugin {
             					}
             					start = true;;
             				}
+            				
             				//PRINT TEAMS AND SCORES
             				player.sendMessage(ChatColor.GOLD + "Top " +listSize+ " Teams:");
             				int ranking = 1;
@@ -590,6 +598,10 @@ public class Clans extends JavaPlugin {
             			else if(1 > Integer.parseInt(args[2])|| Integer.parseInt(args[2]) > getTeam(PlayerName).getRankCount()){//RANK NUMBER DOESNT EXIST
             				player.sendMessage(ChatColor.RED + "Rank number does not exist.");
             				return true;	
+            			}
+            			else if(!Users.containsKey(args[1])){ //MAKE SURE BOTH PLAYERS ARE IN THE SAME TEAM
+            				player.sendMessage(ChatColor.RED + "The specified user was not found.");
+            				return true;
             			}
             			else if(!Users.get(args[1]).getTeamKey().equalsIgnoreCase(tPlayer.getTeamKey())){ //MAKE SURE BOTH PLAYERS ARE IN THE SAME TEAM
             				player.sendMessage(ChatColor.RED + "You are not on the same team.");
@@ -920,6 +932,10 @@ public class Clans extends JavaPlugin {
             				player.sendMessage(ChatColor.RED + "Your team must have " + config.getReqMemColor() + " members to set color.");
             				return true;
             			}
+            			else if(config.UseScore() && !isMinScoreRank(tPlayer.getTeamKey(),config.getReqScoreColor())){
+            				player.sendMessage(ChatColor.RED + "Your team must be rank " + config.getReqScoreColor() + " or higher to set color.");
+            				return true;
+            			}
             			else if(!getTeam(PlayerName).isLeader(PlayerName)){//ISNT LEADER
             				player.sendMessage(ChatColor.RED + "Must be the leader to change the team color.");
             				return true;
@@ -928,7 +944,7 @@ public class Clans extends JavaPlugin {
             				player.sendMessage(ChatColor.RED + "Invalid use of command. Use /team color <colorname>.");
             				return true;
             			}
-            			else if(!Teams.get(tPlayer.getTeamKey()).validateColor(args[1])){ //INVALID COLOR
+            			else if(!Teams.get(tPlayer.getTeamKey()).validateColor(args[1].toUpperCase())){ //INVALID COLOR
             				player.sendMessage(ChatColor.RED + "Invalid color. Choose from this list of colors: DARK_RED, RED, DARK_AQUA," +
             						"AQUA, DARK_GREEN, GREEN, DARK_BLUE, BLUE, DARK_PURPLE, PURPLE, GOLD, YELLOW, BLACK, GRAY");
             				return true;
@@ -939,6 +955,62 @@ public class Clans extends JavaPlugin {
             				saveTeams();
             			}
             			break;
+                    	/* ==============================================================================
+                    	 *	TEAM CAPE - Sets a team's cape
+                    	 * ============================================================================== */
+                		case "CAPE": 
+                			if(!player.hasPermission("Clans.cape")) {
+                				player.sendMessage(ChatColor.RED + "You do not have permission to use this command.");
+                				return true;
+                			}
+                			else if(!config.isAllowCapes())
+                			{
+                				player.sendMessage(ChatColor.RED + "Capes are disabled on this server.");
+                				return true;
+                			}
+                			else if(!tPlayer.hasTeam()){
+                				player.sendMessage(ChatColor.RED + "You are not in a team.");
+                				return true;
+                			}
+                			else if(config.UseScore() && !isMinScoreRank(tPlayer.getTeamKey(),config.getReqScoreCape())){
+                				player.sendMessage(ChatColor.RED + "Your team must be rank " + config.getReqScoreCape() + " or higher to set rank.");
+                				return true;
+                			}
+                			else if(!getTeam(PlayerName).isLeader(PlayerName)){//ISNT LEADER
+                				player.sendMessage(ChatColor.RED + "Must be the leader to change the team cape.");
+                				return true;
+                			}
+                			else if(args.length != 2){//INVALID ARGS
+                				player.sendMessage(ChatColor.RED + "Invalid use of command. Use /team cape <url>.");
+                				return true;
+                			}
+                			else{//SET CAPE
+                				
+                    			try {
+                  				  URL url = new URL(args[1]);
+                  				  if(url.toString().endsWith(".png")) {
+    	                  			  Teams.get(tPlayer.getTeamKey()).setTeamCapeUrl(args[1]);
+    	                  			  for(Player p : getServer().getOnlinePlayers())
+    	                  			  {
+    	                  					if(tPlayer.getTeamKey().equalsIgnoreCase(Users.get(p.getDisplayName()).getTeamKey())){
+    	  	                					SpoutPlayer sp = (SpoutPlayer) p;
+    	  	                					((SpoutPlayer)sp).setCape(args[1]);
+    	                  					}
+    	                  			  }
+                  				  }
+                  				  else {
+                  					Teams.get(tPlayer.getTeamKey()).setTeamCapeUrl("");
+                  				  }
+                  				} catch (MalformedURLException e) {
+                  					Teams.get(tPlayer.getTeamKey()).setTeamCapeUrl("");
+                  				}
+
+                				
+
+                				player.sendMessage(ChatColor.GREEN + "Cape url changed.");
+                				saveTeams();
+                			}
+                			break;
                 	/* ==============================================================================
                 	 *	TEAM MOTD - Set's a team's Message of the Day, prints if no argument 
                 	 * ============================================================================== */
@@ -1306,28 +1378,6 @@ public class Clans extends JavaPlugin {
 		                       		}
 	                			}
                     		break;
-                    		case "CLEAN":  
-                    			if(!player.hasPermission("Clans.area.clean")) {
-	                				player.sendMessage(ChatColor.RED + "You do not have permission to use this command.");
-	                				return true;
-	                			}
-	                			else if(!tPlayer.hasTeam()){//NO TEAM
-	                				player.sendMessage(ChatColor.RED + "You are not in a team.");
-	                				return true;
-	                			}
-	                			else if(!Areas.containsKey(tPlayer.getTeamKey())){ //CAN Area Info
-	                    			player.sendMessage(ChatColor.RED + "Your team does not have a team area.");
-	                    			return true;
-	                    		}
-	                			else if(!Areas.get(tPlayer.getTeamKey()).hasUpgradeCleanser()){ //CAN cleanse
-	                    			player.sendMessage(ChatColor.RED + "Your team does not have this upgrade.");
-	                    			return true;
-	                    		}
-	                			else
-	                			{
-	                				 cleanseArea(tPlayer.getTeamKey());
-	                			}
-                    		break;
                     		case "LIST":  
 	                			if(!player.hasPermission("Clans.area.info")) {
 	                				player.sendMessage(ChatColor.RED + "You do not have permission to use this command.");
@@ -1400,43 +1450,58 @@ public class Clans extends JavaPlugin {
             }
             else if(commandName.equals("cap") || commandName.equals("capture"))
             {
+   			 	String area = findArea(player.getLocation().getBlockX(), player.getLocation().getBlockZ(), player.getWorld().getName());
     			if(!player.hasPermission("Clans.area.capture")) {
     				player.sendMessage(ChatColor.RED + "You do not have permission to use this command.");
     				return true;
     			}
-   			 	if(!tPlayer.hasTeam()) {
+    			else if(!tPlayer.hasTeam()) {
    			 		player.sendMessage(ChatColor.RED + "You are not on a team.");
    			 		return true;
    			 	}
-   			 	String area = findArea(player.getLocation().getBlockX(), player.getLocation().getBlockZ(), player.getWorld().getName());
-   			 	if(area.equalsIgnoreCase(""))
+    			else if(area.equalsIgnoreCase(""))
    			 	{
    			 		player.sendMessage(ChatColor.RED + "You are not within the boundaries of a team's area.");
    			 		return true;
    			 	}
-   			 	if(getArea(area).getHolder().equalsIgnoreCase(tPlayer.getTeamKey()))
+    			else if(getArea(area).getHolder().equalsIgnoreCase(tPlayer.getTeamKey()))
    			 	{
    			 		player.sendMessage(ChatColor.RED + "Your team already holds this area.");
    			 		return true;
    			 	}
    			 	//holders arent online or is team area is not your own
-   			 	if(Teams.get(getArea(area).getHolder()).getOnlineCount() == 0 && !area.equalsIgnoreCase(tPlayer.getTeamKey()))
+    			else if(Teams.get(getArea(area).getHolder()).getOnlineCount() == 0 && !area.equalsIgnoreCase(tPlayer.getTeamKey()))
    			 	{
    			 		player.sendMessage(ChatColor.RED + "You cannot besiege the areas of teams that are offline.");
    			 		return true;
    			 	}
-   			 	int[] res = countInCapturableArea(area, getArea(area).getHolder(), tPlayer.getTeamKey());
-   			 	if(res[0] < 0 )
-   			 	{
-   			 		//start new capture
-   			 		//area:defenders:attackers
-   			 		String key = area+":"+getArea(area).getHolder()+":"+tPlayer.getTeamKey();
-   			 		ContestedAreas.put(key, new AreaContest(this, area, getArea(area).getHolder(), tPlayer.getTeamKey()));
-   			 		getServer().getScheduler().scheduleSyncDelayedTask(this, ContestedAreas.get(key), 200L);
-   			 		//send message
-   			 		getServer().broadcastMessage(ChatColor.DARK_RED + "[RAID] " + ChatColor.YELLOW + tPlayer.getTeamKey() + ChatColor.GOLD +" has besieged " + 
-   			 				getArea(area).getAreaName() + ", currently held by " + ChatColor.YELLOW +getArea(area).getHolder() + ChatColor.GOLD +".");
-   			 	}
+    			else
+    			{
+	   			 	int[] res = countInCapturableArea(area, getArea(area).getHolder(), tPlayer.getTeamKey());
+	   			 	if(res[0] < 0 )
+	   			 	{
+	   			 		//start new capture
+	   			 		//area:defenders:attackers
+	   			 		String key = area+":"+getArea(area).getHolder()+":"+tPlayer.getTeamKey();
+	   			 		if(ContestedAreas.containsKey(key)) {
+	   	   			 		player.sendMessage(ChatColor.RED + "Your team is already capturing this area.");
+	   	   			 		return true;
+	   			 		}
+	   			 		else
+	   			 		{
+		   			 		ContestedAreas.put(key, new AreaContest(this, area, getArea(area).getHolder(), tPlayer.getTeamKey()));
+		   			 		getServer().getScheduler().scheduleSyncDelayedTask(this, ContestedAreas.get(key), 200L);
+		   			 		//send message
+		   			 		getServer().broadcastMessage(ChatColor.DARK_RED + "[RAID] " + ChatColor.YELLOW + tPlayer.getTeamKey() + ChatColor.GOLD +" has besieged " + 
+		   			 				getArea(area).getAreaName() + ", currently held by " + ChatColor.YELLOW +getArea(area).getHolder() + ChatColor.GOLD +".");
+	   			 		}
+	   			 	}
+	   			 	else
+	   			 	{
+   	   			 		player.sendMessage(ChatColor.RED + "You do not have the population advantage in this area to contest it.");
+   	   			 		return true;
+	   			 	}
+    			}
             }
             else
             {
@@ -1469,33 +1534,243 @@ public class Clans extends JavaPlugin {
 		saveAreas();
 		
 	}
+	public void startCleansers()
+	{
+
+		getServer().getScheduler().scheduleAsyncRepeatingTask(this, new Runnable() {
+			public void run() {
+
+				for(String area : Areas.keySet())
+				{
+					if(Areas.get(area).hasUpgradeCleanser()){ //CAN cleanse
+						cleanseArea(area);
+					}
+				}
+			}
+		}, 36000L, 36000L);
+	}
 	public void startScoreKeeper()
 	{
 		getServer().getScheduler().scheduleAsyncRepeatingTask(this, new Runnable() {
 
 			   public void run() {
-				   //tally score
+				   
+				   HashMap<String, Integer> rewardsArea = new HashMap<String, Integer>();
+				   HashMap<String, Double> rewardsPop = new HashMap<String, Double>();
+				   
+				   //tally score from areas
+				   HashMap<String, Integer> arPoints = new HashMap<String, Integer>();
 				   for(String area : Areas.keySet())
 				   {
 					   String holder = Areas.get(area).getHolder();
 					   if(Teams.containsKey(holder))
 					   {
 						   int score = Areas.get(area).getAreaRadius() * 2;
-						   if(holder.equalsIgnoreCase(area))// score * 2 if online, score * 1 if offline
+						   if(holder.equalsIgnoreCase(area))// score * 2 if online, score /4 if offline
 						   {
-							   if(Teams.get(holder).getOnlineCount() > 0)
-								   score=score*2;
-							   else
-								   score=score/2;
 							   Teams.get(holder).addScore(score);
+							   messageTeam(holder, ChatColor.GOLD + "Your team gains " + score + "pts for holding your homeland.");
 						   }
 						   else if (Teams.get(holder).getOnlineCount() > 0)
-							   Teams.get(holder).addScore(score);
-						   messageTeam(holder, ChatColor.GOLD + "Your team has received " + score + "pts for holding " + Areas.get(area).getAreaName());
+						   {
+							   Teams.get(holder).addScore(score*2);
+							   Teams.get(area).addScore(-1*score/2);
+							   if(!arPoints.containsKey(holder))
+								   arPoints.put(holder, 0);
+							   int addedPts = arPoints.get(holder) + (score*2);
+							   arPoints.put(holder, addedPts);
+							   messageTeam(area, ChatColor.RED + "Your team has lost " + score/2 + "pts because you do not hold your homeland.");
+						   }
+						   
+						   //Add teams area count to rewardsArea
+						   if(!rewardsArea.containsKey(holder))
+							   rewardsArea.put(holder, 1);
+						   else
+							   rewardsArea.put(holder, rewardsArea.get(holder)+1);
 					   }
 				   }
+				   for(String s : arPoints.keySet())
+					   messageTeam(s, ChatColor.GOLD + "Your team gains " + arPoints.get(s) + "pts for holding enemy lands.");
+				   HashMap<String, Integer> popPoints = new HashMap<String, Integer>();
+				   for(Player p : getServer().getOnlinePlayers())
+				   {
+					   TeamPlayer t = Users.get(p.getDisplayName());
+					   if(t.hasTeam())
+					   {
+						   if(!popPoints.containsKey(t.getTeamKey()))
+						   {
+							   int pts = Teams.get(t.getTeamKey()).getTeamSize() * 2;
+							   popPoints.put(t.getTeamKey(), pts);
+							   //if in team area 10 -2 
+							   //if outside 5-2
+						   }
+						   if(Areas.containsKey(t.getTeamKey())) {
+							   if(Areas.get(t.getTeamKey()).inArea(p) && t.getTeamKey().equalsIgnoreCase(Areas.get(t.getTeamKey()).getHolder())) {
+								   popPoints.put(t.getTeamKey(), popPoints.get(t.getTeamKey())+8);
+								   if(!rewardsPop.containsKey(t.getTeamKey()))
+									   rewardsPop.put(t.getTeamKey(), 0.5);
+								   else
+									   rewardsPop.put(t.getTeamKey(), rewardsPop.get(t.getTeamKey())+(.5));
+							   }
+							   else {
+								   popPoints.put(t.getTeamKey(), popPoints.get(t.getTeamKey())+3);
+								   if(!rewardsPop.containsKey(t.getTeamKey()))
+									   rewardsPop.put(t.getTeamKey(), .25);
+								   else
+									   rewardsPop.put(t.getTeamKey(), rewardsPop.get(t.getTeamKey())+(.25));
+							   }
+						   }
+						   else
+						   {
+							   popPoints.put(t.getTeamKey(), popPoints.get(t.getTeamKey())+3);
+							   if(!rewardsPop.containsKey(t.getTeamKey()))
+								   rewardsPop.put(t.getTeamKey(), .25);
+							   else
+								   rewardsPop.put(t.getTeamKey(), rewardsPop.get(t.getTeamKey())+(.25));
+						   }
+					   }
+				   }
+				   for(String s : popPoints.keySet()) {
+					   messageTeam(s, ChatColor.GOLD + "Your team gains " + popPoints.get(s)+ "pts from your teams population.");
+					   Teams.get(s).addScore(popPoints.get(s));
+				   }
+				   for(Player p : getServer().getOnlinePlayers())
+				   {
+					   TeamPlayer tp = Users.get(p.getDisplayName());
+					   if(tp.hasTeam())
+					   {
+						   if(rewardsArea.containsKey(tp.getTeamKey()))
+						   {
+								int areanum = rewardsArea.get(tp.getTeamKey());
+								double rewardFunction = 1.5*Math.sqrt(areanum * rewardsPop.get(tp.getTeamKey()));
+								int diamonds = (int)rewardFunction;
+								int iron = (int)((rewardFunction - diamonds)*10);
+								p.sendMessage(ChatColor.LIGHT_PURPLE + "[REWARD] " + ChatColor.GOLD + "You have received " + diamonds + " diamond and " + iron + " iron from the lands your team holds.");
+								if(diamonds != 0)
+									p.getInventory().addItem(new ItemStack(264,diamonds));
+								if(iron != 0)
+									p.getInventory().addItem(new ItemStack(265,iron));
+						   }
+					   }
+				   }
+				   checkTeamColors();
+				   checkTeamCapes();
+				   outputToMySQL();
+				   saveTeams();
 			   }
 			}, 18000L, 36000L);
+	}
+	private void outputToMySQL() {
+	
+		if(config.isOutputMySQL())
+		{
+		  String ip = config.getMySQLHost();
+		  String db = config.getMySQLDB();
+		  String username = config.getMySQLUser();
+		  String password = config.getMySQLPassword();
+		  
+		  Connection con = null;
+		  String url = "jdbc:mysql://"+ip+":3306/";
+		  String driver = "com.mysql.jdbc.Driver";
+		  ResultSet rs = null;
+		  try{
+			  Class.forName(driver);
+			  con = DriverManager.getConnection(url+db,username,password);
+			  Statement st = con.createStatement();
+			  //Create table if not created already
+			  try{
+			  	  st.executeUpdate("CREATE TABLE teams(teamname varchar(90), tag varchar(50), tsize number(4), score number (8))");
+			  }
+			  catch (SQLException s){
+				  System.out.println("SQL statement is not executed!");
+			  }
+			  //go through teams, if they exist update them, if not
+			  for(String TeamName : Teams.keySet())
+			  {
+				  String tag = Teams.get(TeamName).getTeamTag();
+				  int size = Teams.get(TeamName).getTeamSize();
+				  int score = Teams.get(TeamName).getTeamScore();
+				  rs = st.executeQuery("select * from teams where='"+TeamName+"'");
+				  if(rs.next()) { //If tuple exists
+					  st.executeUpdate("update teams set score='"+score+"', size='"+size+"', tag='"+tag+"' where teamname='"+TeamName+"'");
+				  }
+				  else //create tuple
+				  {
+					  st.executeUpdate("insert into teams values('"+TeamName+"','"+tag+"',"+size+","+score+")");
+				  }
+				  rs = null;
+			  }
+		  }
+		  catch (Exception e){
+			  	System.out.println("[MYSQL]" + e.getMessage());
+			  }
+		  if(con != null) {
+			try {
+				con.close();
+			} catch (SQLException e) {System.out.println(e.getMessage());}
+		  }
+		}
+	}
+	public void checkTeamCapes()
+	{
+		ArrayList<TeamScoreNode> list = getTopRankedTeams(Teams.size());
+
+		int i = Teams.size()-1;
+		while (i > config.getReqScoreCape())
+		{
+			Teams.get(list.get(i).TeamName).setTeamCapeUrl("");
+			i--;
+		}
+	}
+	public void checkTeamColors()
+	{
+		ArrayList<TeamScoreNode> list = getTopRankedTeams(Teams.size());
+
+		int i = Teams.size()-1;
+		while (i > config.getReqScoreColor())
+		{
+			if(!Teams.get(list.get(i).TeamName).getColorName().equals("GRAY"))
+				Teams.get(list.get(i).TeamName).setColor("GRAY");
+			i--;
+		}
+	}
+	public boolean isMinScoreRank(String TeamName, int rank)
+	{
+		ArrayList<TeamScoreNode> list = getTopRankedTeams(rank);
+		for(TeamScoreNode tsn : list) {
+			if(TeamName.equalsIgnoreCase(tsn.TeamName))
+				return true;
+		}
+		return false;	
+	}
+	public ArrayList<TeamScoreNode> getTopRankedTeams (int listSize)
+	{
+		ArrayList<TeamScoreNode> TopTeams = new ArrayList<TeamScoreNode>();
+		boolean start = false;
+		for(String teamName : Teams.keySet())
+		{
+			int ts = Teams.get(teamName).getTeamScore();
+			TopTeams.add(new TeamScoreNode(teamName,ts));
+			if(start) {
+				for(int i = TopTeams.size()-1; i >= 1; i--)
+				{
+					if(TopTeams.get(i-1).TeamScore < TopTeams.get(i).TeamScore)
+					{
+						TeamScoreNode temp = TopTeams.get(i);
+						TopTeams.set(i, TopTeams.get(i-1));
+						TopTeams.set(i-1, temp);
+					}
+					else
+					{
+						if(TopTeams.size() >= listSize+1)
+							TopTeams.remove(TopTeams.size()-1);
+						break;
+					}
+				}
+			}
+			start = true;;
+		}
+		return TopTeams;
 	}
 	public void continueSiege(String area, String defenders, String attackers)
 	{
@@ -1622,7 +1897,8 @@ public class Clans extends JavaPlugin {
 			if(inAreaMax(x+maxRadius,z+maxRadius,world,a)
 					||inAreaMax(x+maxRadius,z-maxRadius,world,a)
 					||inAreaMax(x-maxRadius,z+maxRadius,world,a)
-					||inAreaMax(x-maxRadius,z-maxRadius,world,a))
+					||inAreaMax(x-maxRadius,z-maxRadius,world,a)
+					||inAreaMax(x,z,world,a))
 			{
 				if(!team.equalsIgnoreCase(key)) {
 					result = key;
@@ -1631,6 +1907,17 @@ public class Clans extends JavaPlugin {
 				else if (result.equalsIgnoreCase("")) {
 					result = key;
 				}
+			}
+		}
+		int maxR = config.getAreaMaxSize()/2;
+		for(BlackArea ba : BlacklistedAreas)
+		{
+			if(ba.inArea(x+maxR, z+maxR, world) ||
+					ba.inArea(x+maxR, z-maxR, world) ||
+					ba.inArea(x-maxR, z+maxR, world) ||
+					ba.inArea(x-maxR, z-maxR, world) ||
+					ba.inArea(x, z, world)) {
+				return "@Deny";
 			}
 		}
 		return result;
@@ -1757,6 +2044,10 @@ public class Clans extends JavaPlugin {
     		   
     		   String MOTD = (String) t.get("Motd");
     		   String Tag = (String) t.get("Tag");
+			   String Cape = "";
+    		   if(t.containsKey("Cape"))
+    			   Cape = (String) t.get("Cape");
+
     		   String Color = (String) t.get("Color");
     		   int Score = Integer.parseInt(((String) t.get("Score")));
     		   
@@ -1787,7 +2078,7 @@ public class Clans extends JavaPlugin {
     				   TeamList.add(new TierList(newRank, new HashSet<String>()));
     		   }
     		   //Add to Teams
-    		   Teams.put(key, new Team(TeamList, MOTD, Score, Tag, Color));
+    		   Teams.put(key, new Team(TeamList, MOTD, Score, Tag, Color, Cape));
     		   
     		   if(Teams.get(key).getTeamSize() < config.getReqMemColor())
     		   {
@@ -1847,7 +2138,43 @@ public class Clans extends JavaPlugin {
             			
             			Areas.put(ClanKey, new TeamArea(areaName,xLoc, zLoc, World, areaRadius, hold, IntruderAlert,  BlockResistance, BlockDestroyDamage, AreaCleanse));
             		}
-            		//TODO: Implement other types of areas
+            	}
+            }
+            //BLACKLIST AREAS
+            HashMap<String,HashMap<String,Object>> bA = null;
+    		Yaml yamlBlacklist = new Yaml();
+    		reader = null;
+            try {
+                reader = new FileReader(BlacklistFile);
+            } catch (final FileNotFoundException fnfe) {
+            	 System.out.println("BlacklistAreas.YML Not Found!");
+            	   try{
+    	            	  String strManyDirectories="plugins/Clans";
+    	            	  boolean success = (new File(strManyDirectories)).mkdirs();
+    	            	  }catch (Exception e){//Catch exception if any
+    	            	  System.err.println("Error: " + e.getMessage());
+    	            	  }
+            } finally {
+                if (null != reader) {
+                    try {
+                        bA = (HashMap<String, HashMap<String, Object>>) yamlPlayers.load(reader);
+                        reader.close();
+                    } catch (final IOException ioe) {
+                        System.err.println("We got the following exception trying to clean up the reader: " + ioe);
+                    }
+                }
+            }
+            if(bA != null)
+            {
+            	for(String key : bA.keySet())
+            	{
+            		HashMap<String,Object> blacklistData = bA.get(key);
+            		String world = (String) blacklistData.get("world");
+
+            		HashMap<String, Integer> min = (HashMap<String, Integer>) blacklistData.get("min");
+            		HashMap<String, Integer> max = (HashMap<String, Integer>) blacklistData.get("max");
+            			
+            		BlacklistedAreas.add(new BlackArea(min.get("x"),min.get("y"),min.get("z"),max.get("x"),max.get("y"),max.get("z"),world));
             	}
             }
     	   
@@ -2009,13 +2336,21 @@ public class Clans extends JavaPlugin {
 		Users.get(PlayerName).updateLastSeen();
 		savePlayers();
 	}
-	public String getTeamsMOTD(String PlayerName) {
+	public String doTeamsMOTD(String PlayerName) {
 		String motd = "";
 		if(Users.get(PlayerName).hasTeam())
 		{
+			String tk = Users.get(PlayerName).getTeamKey();
 			if(getTeam(PlayerName).hasMOTD())
 			{
 				motd = "" + ChatColor.DARK_GREEN + "[Team MOTD] " + ChatColor.GREEN + getTeam(PlayerName).getMOTD();
+				getServer().getPlayer(PlayerName).sendMessage(motd);
+			}
+			if(Areas.containsKey(tk))
+			{
+				if(!Areas.get(tk).getHolder().equalsIgnoreCase(tk))
+					getServer().getPlayer(PlayerName).sendMessage(ChatColor.GOLD + "[Team MOTD] Your homeland has been taken by " + Areas.get(tk).getHolder() 
+							+  " use /capture in your area to take it back!");
 			}
 		}
 		return motd;
@@ -2092,6 +2427,7 @@ public class Clans extends JavaPlugin {
 			messageTeam(teamName, ""+ChatColor.GREEN + "Cleanser has cleansed " + cleanser.size() +" blocks from your area.");
 		for(Location loc : cleanser)
 			getServer().getWorld("world").getBlockAt(loc).setTypeId(0);
+		Areas.get(teamName).clearCleanseData();
 	}
 	private void cleanseAllAreas()
 	{
@@ -2107,10 +2443,12 @@ public class Clans extends JavaPlugin {
 		}
 		else //if (getServer().getWorld("world").getBlockAt(block.getLocation()).getTypeId() != config.getResistanceBlock()) //if already obsidian do nothing
 		{
-			ResistBlocks.put(block.getLocation(), new ResistantBlock(this,block.getState(),resistIDCount));
-			resistIDCount++;
-			getServer().getWorld("world").getBlockAt(block.getLocation()).setTypeId(49);
-			getServer().getScheduler().scheduleSyncDelayedTask(this, ResistBlocks.get(block.getLocation()), 5100L);
+			if(block.getTypeId() != 54 && block.getTypeId() != 61 && block.getTypeId() != 62 && block.getTypeId() != 64) {
+				ResistBlocks.put(block.getLocation(), new ResistantBlock(this,block.getState(),resistIDCount));
+				resistIDCount++;
+				getServer().getWorld("world").getBlockAt(block.getLocation()).setTypeId(49);
+				getServer().getScheduler().scheduleSyncDelayedTask(this, ResistBlocks.get(block.getLocation()), 5100L);
+			}
 		}
 	}
 	public void TriggerResistanceBreak(Block block) {
@@ -2197,5 +2535,30 @@ public class Clans extends JavaPlugin {
 	}
 	public boolean isResistBlock(Location location) {
 		return ResistBlocks.containsKey(location);
+	}
+	public void addCape(String PlayerName)
+	{
+		if(!getTeam(PlayerName).getTeamCapeUrl().equalsIgnoreCase(""))
+		{
+			try {
+				  URL url = new URL(getTeam(PlayerName).getTeamCapeUrl());
+				  if(url.toString().endsWith(".png")) {
+					Player p = getServer().getPlayer(PlayerName);
+		        	SpoutPlayer sp = (SpoutPlayer)p;
+		        	((SpoutPlayer)sp).setCape(getTeam(PlayerName).getTeamCapeUrl());
+				  }
+			}
+			catch (MalformedURLException e) {
+				Teams.get(Users.get(PlayerName).getTeamKey()).setTeamCapeUrl("");
+			}
+		}
+	}
+	class TeamScoreNode {
+		String TeamName;
+		int TeamScore;
+		public TeamScoreNode (String tn, int ts) {
+			TeamName = tn;
+			TeamScore = ts;
+		}
 	}
 }

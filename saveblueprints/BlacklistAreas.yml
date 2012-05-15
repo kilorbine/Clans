@@ -1,0 +1,4 @@
+spawn:        
+    world: 'world'
+    min: {x: -200, y: 0, z: -200}
+    max: {x: 200, y: 256, z: 200}

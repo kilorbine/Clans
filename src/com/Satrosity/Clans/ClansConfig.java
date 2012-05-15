@@ -1,4 +1,4 @@
-package com.Kingdoms.Clans;
+package com.Satrosity.Clans;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -16,9 +16,9 @@ public class ClansConfig {
 	
 	//General
 	private int Currency; //Added
-	private boolean UseScore; //Not Needed Yet
 	private boolean AllowTKToggle; //Added
 	private boolean TeamTKDefault; //Added
+	private boolean AllowCapes;
 	
 	//Chat
 	private boolean UseTags; // Added
@@ -26,18 +26,31 @@ public class ClansConfig {
 	private String MessageFormat; //Added
 	
 	//Areas
-	private boolean UseAreas; //Not Needed Yet
-	private int AreaMaxSize; //Not Needed Yet
-	private boolean CapturableAreas; //Not Needed Yet
-	private boolean AllowUpgrades; //Not Needed Yet
-	private boolean UPIntruderAlert; //Not Needed Yet
-	private int AlertThreshold; //Not Needed Yet
-	private boolean UPOfflineDamage; //Not Needed Yet
-	private int OfflineDamageAmount; //Not Needed Yet
+	private boolean UseAreas; //Added
+	private int AreaMaxSize; //Added
+	private boolean CapturableAreas; //Added
+	private boolean AntiTNTInAreas;
+	private boolean EnemyBedReset;
+	private boolean AllowUpgrades; //Added
+	private boolean UPIntruderAlert; //Added
+	private int AlertThreshold; //Added
+	private boolean UPOfflineDamage; //Added
+	private int OfflineDamageAmount; //Added
 	private int ODCooldown;
 	private boolean UPBlockResist; //Not Needed Yet
 	private int ResistanceBlock; //Not Needed Yet
 	private boolean UPCleanse;
+	
+	//Score
+	private boolean UseScore; //Added
+	private boolean UseAreaPoints;
+	private boolean UsePopulationPoints;
+	private int TopRanksDisplay; 
+	private boolean outputMySQL;
+	private String MySQLHost;
+	private String MySQLDB;
+	private String MySQLUser;
+	private String MySQLPassword;
 	
 	//Costs
 	private int TagCost; //Added
@@ -61,15 +74,14 @@ public class ClansConfig {
 	
 	private HashSet<String> exemptPlayers;
 	
-	
 	public ClansConfig()
 	{
 		//Set Default Values
 		//General
 		Currency = 41;
-		UseScore = true;
 		AllowTKToggle = true;
 		TeamTKDefault = false;
+		AllowCapes = true;
 		
 		//Chat
 		UseTags = true;
@@ -80,6 +92,8 @@ public class ClansConfig {
 		UseAreas = true;
 		AreaMaxSize = 200;
 		CapturableAreas = true;
+		AntiTNTInAreas = true;
+		EnemyBedReset = true;
 		AllowUpgrades = true;
 		UPIntruderAlert = true;
 		AlertThreshold = 30;
@@ -89,6 +103,17 @@ public class ClansConfig {
 		UPBlockResist = true;
 		ResistanceBlock = 49;
 		UPCleanse = true;
+		
+		//Score
+		UseScore = true;
+		UseAreaPoints = true;
+		UsePopulationPoints = true;
+		TopRanksDisplay = 5; 
+		outputMySQL = false;
+		MySQLHost = "";
+		MySQLDB = "";
+		MySQLUser = "";
+		MySQLPassword = "";
 		
 		//Costs
 		TagCost = 5;
@@ -146,9 +171,9 @@ public class ClansConfig {
         	HashMap<String,Object> General = (HashMap<String,Object>)pl.get("General");
     		//General
     		Currency = (int) General.get("Currency");
-    		UseScore = (boolean) General.get("Use Score");
     		AllowTKToggle = (boolean) General.get("Allow TK Toggle");
     		TeamTKDefault = (boolean) General.get("Team TK Default");
+    		AllowCapes = (boolean) General.get("Allow Capes");
     		
         	HashMap<String,Object> Chat = (HashMap<String,Object>)pl.get("Chat");
     		//Chat
@@ -161,6 +186,8 @@ public class ClansConfig {
     		UseAreas = (boolean) Areas.get("Use Areas");
     		AreaMaxSize = (int) Areas.get("Max Size");
     		CapturableAreas = (boolean) Areas.get("Capturable");
+    		AntiTNTInAreas = (boolean) Areas.get("No TNT Damage");
+    		EnemyBedReset = (boolean) Areas.get("Enemy Bed Reset");
     		AllowUpgrades = (boolean) Areas.get("Allow Upgrades");
     		UPIntruderAlert = (boolean) Areas.get("UP Intruder Alert");
     		AlertThreshold = (int) Areas.get("Alert Threshold");
@@ -170,6 +197,19 @@ public class ClansConfig {
     		UPBlockResist = (boolean) Areas.get("UP Block Resist");
     		ResistanceBlock = (int) Areas.get("Resistance Block");
     		UPCleanse = (boolean) Areas.get("UP Cleanser");
+    		
+        	HashMap<String,Object> Score = (HashMap<String,Object>)pl.get("Score");
+    		//Score
+    		UseScore = (boolean) Score.get("Use Score");
+    		UseAreaPoints = (boolean) Score.get("Area Points");
+    		UsePopulationPoints = (boolean) Score.get("Population Points");
+    		TopRanksDisplay = (int) Score.get("Display Top List");
+    		outputMySQL = (boolean) Score.get("Output MySQL");
+    		MySQLHost = (String) Score.get("MySQL Host");
+    		MySQLDB = (String) Score.get("MySQL DB");
+    		MySQLUser = (String) Score.get("MySQL User");
+    		MySQLPassword = (String) Score.get("MySQL Password");
+
     		
         	HashMap<String,Object> Costs = (HashMap<String,Object>)pl.get("Costs");
     		//Costs
@@ -199,6 +239,45 @@ public class ClansConfig {
     		exemptPlayers = new HashSet<String>(exempt);
         }
 		
+	}
+	public boolean isAllowCapes() {
+		return AllowCapes;
+	}
+	public boolean isAntiTNTInAreas() {
+		return AntiTNTInAreas;
+	}
+	public boolean isEnemyBedReset() {
+		return EnemyBedReset;
+	}
+	public int getODCooldown() {
+		return ODCooldown;
+	}
+	public boolean isUseScore() {
+		return UseScore;
+	}
+	public boolean isUseAreaPoints() {
+		return UseAreaPoints;
+	}
+	public boolean isUsePopulationPoints() {
+		return UsePopulationPoints;
+	}
+	public int getTopRanksDisplay() {
+		return TopRanksDisplay;
+	}
+	public boolean isOutputMySQL() {
+		return outputMySQL;
+	}
+	public String getMySQLHost() {
+		return MySQLHost;
+	}
+	public String getMySQLDB() {
+		return MySQLDB;
+	}
+	public String getMySQLUser() {
+		return MySQLUser;
+	}
+	public String getMySQLPassword() {
+		return MySQLPassword;
 	}
 	public boolean isPlayerExempt(String PlayerName)
 	{

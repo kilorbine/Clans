@@ -1,9 +1,10 @@
-package com.Kingdoms.Clans;
+package com.Satrosity.Clans;
 
 import java.util.logging.Logger;
 
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Arrow;
+import org.bukkit.entity.Creeper;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -13,10 +14,13 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.event.entity.EntityExplodeEvent;
+import org.bukkit.event.entity.ExplosionPrimeEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerChatEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.getspout.spoutapi.event.spout.SpoutCraftEnableEvent;
 
 public class ClansPlayerListener implements Listener {
     public Clans plugin;
@@ -46,12 +50,17 @@ public class ClansPlayerListener implements Listener {
     		//add new player
     	
     	//If player has team and motd, print it
-    	if (!plugin.getTeamsMOTD(PlayerName).equalsIgnoreCase(""))
-    		event.getPlayer().sendMessage(plugin.getTeamsMOTD(PlayerName));
+    	plugin.doTeamsMOTD(PlayerName);
     	
     	if(plugin.getTeamPlayer(event.getPlayer().getDisplayName()).hasTeam())
     		plugin.IncreaseTeamOnlineCount(plugin.getTeamPlayer(event.getPlayer().getDisplayName()).getTeamKey());
     }
+    @EventHandler(priority = EventPriority.NORMAL)
+    public void onSpoutCraftEnable(SpoutCraftEnableEvent event) {
+    	String PlayerName = event.getPlayer().getDisplayName();
+    	if(plugin.getClansConfig().isAllowCapes())
+    		plugin.addCape(PlayerName);
+     }
     @EventHandler(priority = EventPriority.NORMAL)
     public void onPlayerQuit(PlayerQuitEvent event){
     	if(plugin.getTeamPlayer(event.getPlayer().getDisplayName()).hasTeam())
@@ -109,6 +118,34 @@ public class ClansPlayerListener implements Listener {
 	        }
     	}
 	}
+    // Disable priming if needed
+    @EventHandler(priority = EventPriority.NORMAL)
+    public void onExplosionPrime(ExplosionPrimeEvent event)
+    {
+    	int x = event.getEntity().getLocation().getBlockX();
+    	int z = event.getEntity().getLocation().getBlockZ();
+    	String world = event.getEntity().getWorld().getName();
+        // Only supress TNT
+    	if(!plugin.findArea(x, z, world).equalsIgnoreCase("")) {
+	        if(!(event.getEntity() instanceof Creeper))
+	            event.setCancelled(true);
+    	}
+    }
+    
+    // Disable explosion if needed
+    @EventHandler(priority = EventPriority.NORMAL)
+    public void onEntityExplode(EntityExplodeEvent event)
+    {
+    	int x = event.getEntity().getLocation().getBlockX();
+    	int z = event.getEntity().getLocation().getBlockZ();
+    	String world = event.getEntity().getWorld().getName();
+        // Only supress TNT
+    	if(!plugin.findArea(x, z, world).equalsIgnoreCase("")) {
+	        if(!(event.getEntity() instanceof Creeper))
+	            event.setCancelled(true);
+    	}
+    }
+
     @EventHandler(priority = EventPriority.NORMAL)
     public void onEntityDeath(EntityDeathEvent event)
     {

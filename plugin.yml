@@ -1,5 +1,5 @@
 name: Clans
-main: com.Kingdoms.Clans.Clans
+main: com.Satrosity.Clans.Clans
 version: 2.0.5
 commands:
   team:
@@ -57,6 +57,7 @@ permissions:
             Clans.area.capture: true
             Clans.score: true
             Clans.topscores: true
+            Clans.cape: true
     Clans.kick:
         description: Allows you to kick a user from your team.
         default: op
@@ -140,4 +141,7 @@ permissions:
         default: op
     Clans.topscores:
         description: Allows to see the top scoring teams.
+        default: op
+    Clans.cape:
+        description: Allows to set the team cape.
         default: op

@@ -1,8 +1,8 @@
 General:
     Currency: 41
-    Use Score: true
     Allow TK Toggle: true
     Team TK Default: false
+    Allow Capes: true
 
 Chat:
     Use Tags: true
@@ -13,31 +13,40 @@ Areas:
     Use Areas: true
     Max Size: 200
     Capturable: true
+    No TNT Damage: true
+    Enemy Bed Reset: true
     Allow Upgrades: true
-
     UP Intruder Alert: true
     Alert Threshold: 30
-
     UP Offline Defense: true
     Offline Damage: 4
     Damager Cooldown: 1000
-
     UP Block Resist: true
     Resistance Block: 49
-
     UP Cleanser: true
+
+Score:
+    Use Score: true
+    Area Points: true
+    Population Points: true
+    Display Top List: 5
+    Output MySQL: true
+    MySQL Host: ''
+    MySQL DB: ''
+    MySQL User: ''
+    MySQL Password: ''
 
 Costs:
     Tag: 5
-    Area: 10
+    Area: 25
     Increase Size: 10
     Alert Upgrade: 10
-    Damage Upgrade: 25
+    Damage Upgrade: 75
     Resist Upgrade: 50
-    Cleanse Upgrade: 50
+    Cleanse Upgrade: 100
 
 Req Member Counts:
-    Tag Color: 10
+    Tag Color: 0
     Area: 10
 
 Req Score Ranks:
@@ -45,10 +54,20 @@ Req Score Ranks:
     Cape: 10
 
 Clean Up:
-    Clear Player Days: 30
+    Clear Player Days: 60
 
 Do Not Delete Players:
     - 'SatrosWaR'
+    - 'staticgirl'
+    - 'Kittara'
+    - 'TheFinisher'
+    - 'Cezul'
+    - 'Zaifos'
+    - 'BlowJodQueen'
+    - 'CJ_Guns'
+    - 'Furryforever'
+    - 'bPORR'
+    - 'Wickwire034'
+    - 'AmbulanceParty'
     - 'jioji'
     - 'chipclip'
-
