@@ -40,6 +40,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.getspout.spoutapi.SpoutManager;
 import org.getspout.spoutapi.player.SpoutPlayer;
 import org.yaml.snakeyaml.Yaml;
 
@@ -112,6 +113,11 @@ public class Clans extends JavaPlugin {
 		{
 			startScoreKeeper();
 		}
+		if(config.UseAreas() && config.isUPCleanse())
+			startCleansers();
+		
+		if(config.isAllowCapes())
+			addCapes();
 		
 		resistIDCount = 0;
 		
@@ -946,7 +952,7 @@ public class Clans extends JavaPlugin {
             			}
             			else if(!Teams.get(tPlayer.getTeamKey()).validateColor(args[1].toUpperCase())){ //INVALID COLOR
             				player.sendMessage(ChatColor.RED + "Invalid color. Choose from this list of colors: DARK_RED, RED, DARK_AQUA," +
-            						"AQUA, DARK_GREEN, GREEN, DARK_BLUE, BLUE, DARK_PURPLE, PURPLE, GOLD, YELLOW, BLACK, GRAY");
+            						"AQUA, DARK_GREEN, GREEN, DARK_BLUE, BLUE, DARK_PURPLE, LIGHT_PURPLE, GOLD, YELLOW, BLACK, GRAY");
             				return true;
             			}
             			else{//SET COLOR
@@ -990,23 +996,18 @@ public class Clans extends JavaPlugin {
                   				  URL url = new URL(args[1]);
                   				  if(url.toString().endsWith(".png")) {
     	                  			  Teams.get(tPlayer.getTeamKey()).setTeamCapeUrl(args[1]);
-    	                  			  for(Player p : getServer().getOnlinePlayers())
-    	                  			  {
-    	                  					if(tPlayer.getTeamKey().equalsIgnoreCase(Users.get(p.getDisplayName()).getTeamKey())){
-    	  	                					SpoutPlayer sp = (SpoutPlayer) p;
-    	  	                					((SpoutPlayer)sp).setCape(args[1]);
-    	                  					}
-    	                  			  }
+    	                  			  addCapes();
                   				  }
                   				  else {
                   					Teams.get(tPlayer.getTeamKey()).setTeamCapeUrl("");
+                  					player.sendMessage(ChatColor.RED + "Invalid cape url, file must be a PNG.");
+                    				return true;
                   				  }
                   				} catch (MalformedURLException e) {
                   					Teams.get(tPlayer.getTeamKey()).setTeamCapeUrl("");
+                  					player.sendMessage(ChatColor.RED + "Invalid cape url, file must be a PNG.");
+                    				return true;
                   				}
-
-                				
-
                 				player.sendMessage(ChatColor.GREEN + "Cape url changed.");
                 				saveTeams();
                 			}
@@ -1125,8 +1126,12 @@ public class Clans extends JavaPlugin {
 	                				player.sendMessage(ChatColor.RED + "You are not in a team.");
 	                				return true;
 	                			}
+	                			else if(getTeam(player.getDisplayName()).getTeamSize() < config.getReqMemArea()){//NO TEAM
+	                				player.sendMessage(ChatColor.RED + "You must have " + config.getReqMemArea() + " members to claim an area.");
+	                				return true;
+	                			}
 	                			else if (!getTeam(PlayerName).isLeader(PlayerName)) {//MUST BE LEADER
-	                				player.sendMessage(ChatColor.RED + "You must be the leader to disband the team.");
+	                				player.sendMessage(ChatColor.RED + "You must be the leader to claim an area.");
 	                				return true;
 	                			}
 	                			else if(!canAfford(PlayerName,config.getAreaCost()))
@@ -1653,6 +1658,17 @@ public class Clans extends JavaPlugin {
 						   }
 					   }
 				   }
+				   //GIVE EXP
+				   String topTeam = getTopRankedTeams(1).get(0).TeamName;
+				   for(Player p : getServer().getOnlinePlayers())
+				   {
+					   if(Users.get(p.getDisplayName()).getTeamKey().equalsIgnoreCase(topTeam)) {
+						   ExperienceUtils.changeExp(p, 100);
+						   //p.setTotalExperience(p.getTotalExperience()+100);
+						   p.sendMessage(ChatColor.LIGHT_PURPLE + "[REWARD] " + ChatColor.GOLD + "You have gained 100 exp for being on the top ranked team.");
+					   }
+				   }
+				   
 				   checkTeamColors();
 				   checkTeamCapes();
 				   outputToMySQL();
@@ -2429,6 +2445,10 @@ public class Clans extends JavaPlugin {
 			getServer().getWorld("world").getBlockAt(loc).setTypeId(0);
 		Areas.get(teamName).clearCleanseData();
 	}
+	public boolean isTeamOnline(String TeamName)
+	{
+		return (Teams.get(TeamName).getOnlineCount() > 0);
+	}
 	private void cleanseAllAreas()
 	{
 		for(String key : Areas.keySet()) {
@@ -2443,12 +2463,10 @@ public class Clans extends JavaPlugin {
 		}
 		else //if (getServer().getWorld("world").getBlockAt(block.getLocation()).getTypeId() != config.getResistanceBlock()) //if already obsidian do nothing
 		{
-			if(block.getTypeId() != 54 && block.getTypeId() != 61 && block.getTypeId() != 62 && block.getTypeId() != 64) {
 				ResistBlocks.put(block.getLocation(), new ResistantBlock(this,block.getState(),resistIDCount));
 				resistIDCount++;
 				getServer().getWorld("world").getBlockAt(block.getLocation()).setTypeId(49);
 				getServer().getScheduler().scheduleSyncDelayedTask(this, ResistBlocks.get(block.getLocation()), 5100L);
-			}
 		}
 	}
 	public void TriggerResistanceBreak(Block block) {
@@ -2536,21 +2554,54 @@ public class Clans extends JavaPlugin {
 	public boolean isResistBlock(Location location) {
 		return ResistBlocks.containsKey(location);
 	}
-	public void addCape(String PlayerName)
+	public void addCapes()
 	{
-		if(!getTeam(PlayerName).getTeamCapeUrl().equalsIgnoreCase(""))
+		for(Player player : getServer().getOnlinePlayers())
 		{
-			try {
-				  URL url = new URL(getTeam(PlayerName).getTeamCapeUrl());
-				  if(url.toString().endsWith(".png")) {
-					Player p = getServer().getPlayer(PlayerName);
-		        	SpoutPlayer sp = (SpoutPlayer)p;
-		        	((SpoutPlayer)sp).setCape(getTeam(PlayerName).getTeamCapeUrl());
-				  }
+			if(Users.get(player.getDisplayName()).hasTeam())
+			{
+				if(!getTeam(player.getDisplayName()).getTeamCapeUrl().equalsIgnoreCase(""))
+				{
+					try {
+						  URL url = new URL(getTeam(player.getDisplayName()).getTeamCapeUrl());
+						  if(url.toString().endsWith(".png")) {
+					        	SpoutPlayer sp = (SpoutPlayer)player;
+					        	((SpoutPlayer)sp).setCape(getTeam(player.getDisplayName()).getTeamCapeUrl());
+				        	//SpoutPlayer sp = (SpoutPlayer)p;
+				        	//((SpoutPlayer)sp).set(getTeam(PlayerName).getTeamCapeUrl());
+						  }
+					}
+					catch (MalformedURLException e) {
+						Teams.get(Users.get(player.getDisplayName()).getTeamKey()).setTeamCapeUrl("");
+					}
+				}
 			}
-			catch (MalformedURLException e) {
-				Teams.get(Users.get(PlayerName).getTeamKey()).setTeamCapeUrl("");
-			}
+
+        	/*
+			for(Player player2 : getServer().getOnlinePlayers())
+			{
+				if(Users.get(player2.getDisplayName()).hasTeam())
+				{
+					if(!getTeam(player2.getDisplayName()).getTeamCapeUrl().equalsIgnoreCase(""))
+					{
+						try {
+							  URL url = new URL(getTeam(player2.getDisplayName()).getTeamCapeUrl());
+							  if(url.toString().endsWith(".png")) {
+								SpoutPlayer splayer = SpoutManager.getPlayer(player);
+								SpoutPlayer splayerTo = SpoutManager.getPlayer(player2);
+								splayer.setCapeFor(splayerTo, getTeam(player2.getDisplayName()).getTeamCapeUrl());
+								System.out.println("Set player " + splayerTo.getDisplayName() + "");
+								
+					        	//SpoutPlayer sp = (SpoutPlayer)p;
+					        	//((SpoutPlayer)sp).set(getTeam(PlayerName).getTeamCapeUrl());
+							  }
+						}
+						catch (MalformedURLException e) {
+							Teams.get(Users.get(player2.getDisplayName()).getTeamKey()).setTeamCapeUrl("");
+						}
+					}
+				}
+			}*/
 		}
 	}
 	class TeamScoreNode {

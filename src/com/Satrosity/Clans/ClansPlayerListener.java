@@ -7,6 +7,7 @@ import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Creeper;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.ThrownPotion;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -17,9 +18,11 @@ import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.entity.ExplosionPrimeEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerChatEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.PlayerRespawnEvent;
 import org.getspout.spoutapi.event.spout.SpoutCraftEnableEvent;
 
 public class ClansPlayerListener implements Listener {
@@ -41,6 +44,11 @@ public class ClansPlayerListener implements Listener {
     	}
     }
     @EventHandler(priority = EventPriority.NORMAL)
+    public void onPlayerRespawn(PlayerRespawnEvent event) {
+    	if(plugin.getClansConfig().isAllowCapes())
+    		plugin.addCapes();
+     }
+    @EventHandler(priority = EventPriority.NORMAL)
     public void onPlayerJoin(PlayerJoinEvent event){
     	String PlayerName = event.getPlayer().getDisplayName();
     	if(!plugin.hasUser(PlayerName))
@@ -57,9 +65,13 @@ public class ClansPlayerListener implements Listener {
     }
     @EventHandler(priority = EventPriority.NORMAL)
     public void onSpoutCraftEnable(SpoutCraftEnableEvent event) {
-    	String PlayerName = event.getPlayer().getDisplayName();
     	if(plugin.getClansConfig().isAllowCapes())
-    		plugin.addCape(PlayerName);
+    		plugin.addCapes();
+     }
+    @EventHandler(priority = EventPriority.NORMAL)
+    public void onWorldChange(PlayerChangedWorldEvent event) {
+    	if(plugin.getClansConfig().isAllowCapes())
+    		plugin.addCapes();
      }
     @EventHandler(priority = EventPriority.NORMAL)
     public void onPlayerQuit(PlayerQuitEvent event){
@@ -89,8 +101,33 @@ public class ClansPlayerListener implements Listener {
 	    		}
 	    	}
 	    }
-    	else if (event.getCause().equals(DamageCause.PROJECTILE))
+    	else if (event.getCause().equals(DamageCause.MAGIC))
     	{
+	    	EntityDamageByEntityEvent e = (EntityDamageByEntityEvent)event;
+	        if(e.getDamager() instanceof ThrownPotion)
+	        {
+	            ThrownPotion potion = (ThrownPotion)e.getDamager();
+	            Entity entity = event.getEntity();
+	            int damage = event.getDamage();
+	            if(potion.getShooter() instanceof Player && entity instanceof Player) {
+		    		Player attacker = (Player)potion.getShooter();
+		    		Player victim = (Player)entity;
+		    		
+		    		TeamPlayer att = plugin.getTeamPlayer(attacker.getDisplayName());
+		    		TeamPlayer vic = plugin.getTeamPlayer(victim.getDisplayName());
+		    		
+		    		if(att.getTeamKey().equalsIgnoreCase(vic.getTeamKey()) && !att.getTeamKey().equalsIgnoreCase(""))
+		    		{
+		    			if(!att.canTeamKill() && !vic.canTeamKill())
+		    			{
+		    				//attacker.sendMessage(ChatColor.GREEN + "This player is on your team. Use '/team tk on' to turn on team pvp.");
+		    				event.setCancelled(true);
+		    			}
+		    		}
+	            }
+	        }
+    	}
+    	else if (event.getCause().equals(DamageCause.PROJECTILE)){
 	    	EntityDamageByEntityEvent e = (EntityDamageByEntityEvent)event;
 	        if(e.getDamager() instanceof Arrow)
 	        {
@@ -114,7 +151,6 @@ public class ClansPlayerListener implements Listener {
 		    		}
 	            	
 	            }
-            
 	        }
     	}
 	}
@@ -126,9 +162,11 @@ public class ClansPlayerListener implements Listener {
     	int z = event.getEntity().getLocation().getBlockZ();
     	String world = event.getEntity().getWorld().getName();
         // Only supress TNT
-    	if(!plugin.findArea(x, z, world).equalsIgnoreCase("")) {
+    	String area = plugin.findArea(x, z, world);
+    	if(!area.equalsIgnoreCase("")) {
 	        if(!(event.getEntity() instanceof Creeper))
-	            event.setCancelled(true);
+	        	if(!plugin.isTeamOnline(area))
+	        		event.setCancelled(true);
     	}
     }
     
@@ -140,12 +178,13 @@ public class ClansPlayerListener implements Listener {
     	int z = event.getEntity().getLocation().getBlockZ();
     	String world = event.getEntity().getWorld().getName();
         // Only supress TNT
-    	if(!plugin.findArea(x, z, world).equalsIgnoreCase("")) {
+    	String area = plugin.findArea(x, z, world);
+    	if(!area.equalsIgnoreCase("")) {
 	        if(!(event.getEntity() instanceof Creeper))
-	            event.setCancelled(true);
+	        	if(!plugin.isTeamOnline(area))
+	        		event.setCancelled(true);
     	}
     }
-
     @EventHandler(priority = EventPriority.NORMAL)
     public void onEntityDeath(EntityDeathEvent event)
     {

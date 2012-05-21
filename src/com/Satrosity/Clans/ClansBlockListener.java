@@ -25,15 +25,18 @@ public class ClansBlockListener implements Listener{
 	    	String test = plugin.findArea(event.getBlock().getX(), event.getBlock().getZ(), event.getBlock().getWorld().getName());
 	    	String userTeam = plugin.getTeamPlayer(event.getPlayer().getDisplayName()).getTeamKey();
 	    	if(!userTeam.equalsIgnoreCase(test)) {
-		    	if(!test.equalsIgnoreCase("")) { //Block Break in Area
-		    		TeamArea a = plugin.getArea(test);
-		    		if(a.hasUpgradeAlerter())
-		    			plugin.TriggerAlerter(test);
-		    		if(a.hasUpgradeDamager())
-		    			plugin.TriggerDamager(event.getPlayer(),test);
-		    		if(a.hasUpgradeCleanser())
-		    			plugin.TriggerCleanserPlace(event.getBlock(),test);
-		    	}
+	    		
+	    		if(event.getBlock().getTypeId() != 46) { //no placing inside team areas
+			    	if(!test.equalsIgnoreCase("")) { //Block Break in Area
+			    		TeamArea a = plugin.getArea(test);
+			    		if(a.hasUpgradeAlerter())
+			    			plugin.TriggerAlerter(test);
+			    		if(a.hasUpgradeDamager())
+			    			plugin.TriggerDamager(event.getPlayer(),test);
+			    		if(a.hasUpgradeCleanser())
+			    			plugin.TriggerCleanserPlace(event.getBlock(),test);
+			    	}
+	    		}
 	    	}
     	}
     }
@@ -74,17 +77,20 @@ public class ClansBlockListener implements Listener{
 	    	String test = plugin.findArea(event.getBlock().getX(), event.getBlock().getZ(), event.getBlock().getWorld().getName());
 	    	String userTeam = plugin.getTeamPlayer(event.getPlayer().getDisplayName()).getTeamKey();
 		    if(!test.equalsIgnoreCase("")) { //Block Break in Area
-		    	TeamArea a = plugin.getArea(test);
-		    	if(!userTeam.equalsIgnoreCase(test)) {
-		    		if(a.hasUpgradeResistance())
-		    			plugin.TriggerResistanceDamage(event.getBlock());
-		    	}
-		    	else
-		    	{
-		    		if(a.hasUpgradeResistance() && plugin.isResistBlock(event.getBlock().getLocation())) {
-		    			plugin.ResetResistBlock(event.getBlock().getLocation());
-		    		}
-		    	}
+		    	//if storage then ignore
+				if(event.getBlock().getTypeId() != 54 && event.getBlock().getTypeId() != 61 && event.getBlock().getTypeId() != 62 && event.getBlock().getTypeId() != 64) {
+			    	TeamArea a = plugin.getArea(test);
+			    	if(!userTeam.equalsIgnoreCase(test)) {
+			    		if(a.hasUpgradeResistance())
+			    			plugin.TriggerResistanceDamage(event.getBlock());
+			    	}
+			    	else
+			    	{
+			    		if(a.hasUpgradeResistance() && plugin.isResistBlock(event.getBlock().getLocation())) {
+			    			plugin.ResetResistBlock(event.getBlock().getLocation());
+			    		}
+			    	}
+				}
 	    	}
 		    
     	}

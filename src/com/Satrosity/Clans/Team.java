@@ -310,7 +310,7 @@ public boolean validateColor(String Colorin){
 		     case "DARK_PURPLE":
 		     c = ChatColor.DARK_PURPLE;
 		     break;
-		     case "PURPLE":
+		     case "LIGHT_PURPLE":
 		     c = ChatColor.LIGHT_PURPLE;
 		     break;
 		     case "GOLD":
