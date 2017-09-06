@@ -3,8 +3,10 @@ package com.Satrosity.Clans;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.UUID;
 
 import org.bukkit.ChatColor;
+import org.bukkit.Server;
 
 public class Team {
 	
@@ -30,7 +32,7 @@ public class Team {
 		OnlineCount = 0;
 	}
 	//Read in from file
-	public Team(String Leadername)
+	public Team(UUID playerUuid)
 	{
 		TeamList = new ArrayList<TierList> ();
 		
@@ -38,7 +40,7 @@ public class Team {
 		TeamRank LeaderRank = new TeamRank("Leader");
 		LeaderRank.makeTopRank();
 		TeamList.add(new TierList(LeaderRank));
-		TeamList.get(0).add(Leadername);
+		TeamList.get(0).add(playerUuid);
 		
 		//Make Member List
 		TeamRank MemberRank = new TeamRank("Member");
@@ -53,18 +55,18 @@ public class Team {
 		OnlineCount = 0;
 	}
 	
-	public boolean isLeader(String PlayerName)
+	public boolean isLeader(UUID playerUuid)
 	{
-		return TeamList.get(0).containsMember(PlayerName);
+		return TeamList.get(0).containsMember(playerUuid);
 	}
 	public int getLeaderCount()
 	{
 		return TeamList.get(0).getTierSize();
 	}
-	public void addMember(String PlayerName)
+	public void addMember(UUID playerUuid)
 	{
 		int LastRankNumber = TeamList.size()-1;
-		TeamList.get(LastRankNumber).add(PlayerName);
+		TeamList.get(LastRankNumber).add(playerUuid);
 	}
 	
 	public String getMOTD(){
@@ -74,14 +76,14 @@ public class Team {
 		TeamMOTD = MOTDin;		
 	}
 	
-	public void removeMember(String PlayerName)
+	public void removeMember(UUID playerUuid)
 	{
 		int RankCount = TeamList.size();
 		int i;
 		for(i=0; i<RankCount; i++)
 		{
-			if(TeamList.get(i).containsMember(PlayerName))
-				TeamList.get(i).remove(PlayerName);
+			if(TeamList.get(i).containsMember(playerUuid))
+				TeamList.get(i).remove(playerUuid);
 		}
 	}
 	public void addRank(TeamRank NewRank)
@@ -110,7 +112,7 @@ public class Team {
 	{
 		return !TeamMOTD.equalsIgnoreCase("");
 	}
-	public TeamRank getRank(String PlayerName)
+	public TeamRank getRank(UUID playerUuid)
 	{
 		int RankCount = TeamList.size();
 		int i;
@@ -119,19 +121,19 @@ public class Team {
 		
 		for(i=0; i<RankCount; i++)
 		{
-			if(TeamList.get(i).containsMember(PlayerName))
+			if(TeamList.get(i).containsMember(playerUuid))
 				return TeamList.get(i).getRank();
 		}
 		return r;
 	}
-	public int getRankNumber(String PlayerName)
+	public int getRankNumber(UUID playerUuid)
 	{
 		int RankCount = TeamList.size();
 		int i;
 		
 		for(i=0; i<RankCount; i++)
 		{
-			if(TeamList.get(i).containsMember(PlayerName))
+			if(TeamList.get(i).containsMember(playerUuid))
 				return i;
 		}
 		return -1;
@@ -142,9 +144,9 @@ public class Team {
 		return TeamList.get(RankNumber-1).getRank();
 	}
 	
-	public void changePlayerRank(String PlayerName,int RankNumber){
-		TeamList.get(this.getRankNumber(PlayerName)).remove(PlayerName);
-		TeamList.get(RankNumber-1).add(PlayerName);
+	public void changePlayerRank(UUID uuid,int RankNumber){
+		TeamList.get(this.getRankNumber(uuid)).remove(uuid);
+		TeamList.get(RankNumber-1).add(uuid);
 	}
 	
 	public void changeRankName(int RankNumber, String newName){
@@ -162,13 +164,13 @@ public class Team {
 		TeamColor = interpretColor(Colorin);
 	}
 	
-	public ArrayList<String> getAllMembers()
+	public ArrayList<String> getAllMembers(Server server)
 	{
 		//Super inefficient! But only needed for disband...
 		ArrayList<String> members = new ArrayList<String>();
 		for(TierList tl : TeamList)
 		{
-			String list = tl.membersToString();
+			String list = tl.membersToString(server);
 			if(!list.equalsIgnoreCase("")) {
 					String[] RankMembers = list.split(", ");
 					for(String s : RankMembers)
@@ -177,14 +179,14 @@ public class Team {
 		}
 		return members;
 	}
-	public ArrayList<String> getTeamInfo()
+	public ArrayList<String> getTeamInfo(Server server)
 	{
 		ArrayList<String> teamInfo = new ArrayList<String>();
 		teamInfo.add(TeamColor + "Team Members: " + getTeamSize());
 		int rankNum = 1;
 		for(TierList tl : TeamList)
 		{
-			teamInfo.add(TeamColor + "" + rankNum + ". "+ tl.getRank().getRankName() + ": " + ChatColor.GRAY + tl.membersToString());
+			teamInfo.add(TeamColor + "" + rankNum + ". "+ tl.getRank().getRankName() + ": " + ChatColor.GRAY + tl.membersToString(server));
 			rankNum++;
 		}
 		return teamInfo;
@@ -213,10 +215,10 @@ public class Team {
 		}	
 	}
 	public void massRankMove(int start, int finish){
-		HashSet<String> temp = new HashSet<String>();
+		HashSet<UUID> temp = new HashSet<UUID>();
 		temp = TeamList.get(start -1).getRankMembers();
 		TeamList.get(start - 1).clearRankMembers();
-		for(String member : temp){
+		for(UUID member : temp){
 			TeamList.get(finish-1).add(member);
 		}
 	}

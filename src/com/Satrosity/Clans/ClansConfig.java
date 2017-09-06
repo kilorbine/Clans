@@ -6,9 +6,11 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
-import java.util.Calendar;
+//import java.util.Calendar;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.UUID;
 
 import org.yaml.snakeyaml.Yaml;
 
@@ -72,7 +74,7 @@ public class ClansConfig {
 	//Clean Up
 	private int CleanPlayerDays; 
 	
-	private HashSet<String> exemptPlayers;
+	private HashSet<UUID> exemptPlayers;
 	
 	public ClansConfig()
 	{
@@ -136,11 +138,12 @@ public class ClansConfig {
 		CleanPlayerDays = 14;
 		
 		//Exempt From Deletion
-		exemptPlayers = new HashSet();
+		exemptPlayers = new HashSet<UUID>();
 		
 		//setConfig
 		setConfig();
 	}
+	@SuppressWarnings("unchecked")
 	private void setConfig()
 	{
 		HashMap<String,Object> pl = null;
@@ -236,7 +239,12 @@ public class ClansConfig {
     		CleanPlayerDays = (int) Cleanup.get("Clear Player Days");
     		
     		ArrayList<String> exempt = (ArrayList<String>)pl.get("Do Not Delete Players");
-    		exemptPlayers = new HashSet<String>(exempt);
+    		List<UUID> tmpList = new ArrayList<UUID>(exempt.size()) ;
+            for (String userId : exempt) 
+            { 
+            	tmpList.add(UUID.fromString(userId)); 
+            }
+    		exemptPlayers = new HashSet<UUID>(tmpList);
         }
 		
 	}
@@ -279,9 +287,9 @@ public class ClansConfig {
 	public String getMySQLPassword() {
 		return MySQLPassword;
 	}
-	public boolean isPlayerExempt(String PlayerName)
+	public boolean isPlayerExempt(UUID pName)
 	{
-		return exemptPlayers.contains(PlayerName);
+		return exemptPlayers.contains(pName);
 	}
 	public int getCurrency() {
 		return Currency;

@@ -1,43 +1,86 @@
 package com.Satrosity.Clans;
 
 import java.util.HashSet;
+import java.util.UUID;
+import 	org.bukkit.plugin.java.JavaPlugin;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.Reader;
+//import java.net.MalformedURLException;
+//import java.net.URL;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+//import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
+import java.util.HashMap;
+import java.util.Map.Entry;
+//import java.util.Map;
+import java.util.Set;
+//import java.util.TreeMap;
+import java.util.logging.Logger;
 
+import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.Location;
+import org.bukkit.block.Block;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandSender;
+//import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.entity.Player;
+//import org.bukkit.event.Event;
+//import org.bukkit.event.EventPriority;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.plugin.PluginDescriptionFile;
+import org.bukkit.plugin.PluginManager;
+import org.yaml.snakeyaml.Yaml;
+import org.bukkit.Server;
+//Newly Created
+//Read in from File
 public class TierList {
 	
 	private TeamRank Rank;
-	private HashSet<String> RankMembers;
+	private HashSet<UUID> RankMembers;
 	
 	//Newly Created
 	public TierList(TeamRank r)
 	{
 		Rank = r;
-		RankMembers = new HashSet<String>();
+		RankMembers = new HashSet<UUID>();
 	}
 	//Read in from File
-	public TierList(TeamRank r, HashSet<String> list)
+	public TierList(TeamRank r, HashSet<UUID> list)
 	{
 		Rank = r;
 		RankMembers = list;
 	}
-	public HashSet<String> getRankMembers() {
+	public HashSet<UUID> getRankMembers() {
 		return RankMembers;
 	}
 	
 	public void clearRankMembers() {
-		RankMembers = new HashSet<String>();
+		RankMembers = new HashSet<UUID>();
 	}
 
-	public void add(String PlayerName)
+	public void add(UUID playerUuid)
 	{
-		RankMembers.add(PlayerName);
+		RankMembers.add(playerUuid);
 	}
-	public void remove(String PlayerName)
+	public void remove(UUID playerUuid)
 	{
-		RankMembers.remove(PlayerName);
+		RankMembers.remove(playerUuid);
 	}
-	public boolean containsMember(String PlayerName)
+	public boolean containsMember(UUID playerUuid)
 	{
-		return RankMembers.contains(PlayerName);
+		return RankMembers.contains(playerUuid);
 	}
 	public boolean isEmpty()
 	{
@@ -57,22 +100,24 @@ public class TierList {
 	{
 		String save = Rank.getSaveString();
 		save += "            Members:\n";
-		for(String player : RankMembers)
+		for(UUID player : RankMembers)
 		{
-			save += "                - \'" + player + "\'\n";
+			save += "                - \'" + player.toString() + "\'\n";
 		}
 		return save;
 	}
-	public String membersToString()
+	
+	public String membersToString(Server server)
 	{
 		String list = "";
+		
 		if(!RankMembers.isEmpty()) {
 			int i = 1;
-			for(String member : RankMembers) {
+			for(UUID member : RankMembers) {
 				if(i == RankMembers.size())
-					list += member;
+					list += server.getPlayer(member).getDisplayName();
 				else
-					list += member + ", ";
+					list += server.getPlayer(member).getDisplayName() + ", ";
 				i++;
 			}
 		}

@@ -1,5 +1,6 @@
 package com.Satrosity.Clans;
 
+import java.util.UUID;
 import java.util.logging.Logger;
 
 import org.bukkit.ChatColor;
@@ -23,8 +24,8 @@ import org.bukkit.event.player.PlayerChatEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
-import org.getspout.spoutapi.event.spout.SpoutCraftEnableEvent;
 
+@SuppressWarnings("deprecation")
 public class ClansPlayerListener implements Listener {
     public Clans plugin;
     Logger log = Logger.getLogger("Minecraft");
@@ -40,43 +41,43 @@ public class ClansPlayerListener implements Listener {
     		Player p = event.getPlayer();
     		String fulltag = plugin.getClansConfig().getTagFormat();
     		String format = plugin.getClansConfig().getMessageFormat();
-    		event.setFormat(insertData(format,fulltag,p.getDisplayName()));
+    		event.setFormat(insertData(format,fulltag,p.getUniqueId()));
     	}
     }
     @EventHandler(priority = EventPriority.NORMAL)
     public void onPlayerRespawn(PlayerRespawnEvent event) {
-    	if(plugin.getClansConfig().isAllowCapes())
-    		plugin.addCapes();
+    	/*if(plugin.getClansConfig().isAllowCapes()) ANCRE DESACTIVATION CAPES
+    		plugin.addCapes();*/
      }
     @EventHandler(priority = EventPriority.NORMAL)
     public void onPlayerJoin(PlayerJoinEvent event){
-    	String PlayerName = event.getPlayer().getDisplayName();
-    	if(!plugin.hasUser(PlayerName))
-    		plugin.makeUser(PlayerName);
+    	UUID PlayerUuid = event.getPlayer().getUniqueId();
+    	if(!plugin.hasUser(PlayerUuid))
+    		plugin.makeUser(PlayerUuid);
     	else
-    		plugin.updateUserDate(PlayerName);
+    		plugin.updateUserDate(PlayerUuid);
     		//add new player
     	
     	//If player has team and motd, print it
-    	plugin.doTeamsMOTD(PlayerName);
+    	plugin.doTeamsMOTD(PlayerUuid);
     	
-    	if(plugin.getTeamPlayer(event.getPlayer().getDisplayName()).hasTeam())
-    		plugin.IncreaseTeamOnlineCount(plugin.getTeamPlayer(event.getPlayer().getDisplayName()).getTeamKey());
+    	if(plugin.getTeamPlayer(PlayerUuid).hasTeam())
+    		plugin.IncreaseTeamOnlineCount(plugin.getTeamPlayer(PlayerUuid).getTeamKey());
     }
-    @EventHandler(priority = EventPriority.NORMAL)
-    public void onSpoutCraftEnable(SpoutCraftEnableEvent event) {
+    /*@EventHandler(priority = EventPriority.NORMAL)
+    public void onSpoutCraftEnable(SpoutCraftEnableEvent event) { ANCRE DESACTIVATION SPOUTCRAFT
     	if(plugin.getClansConfig().isAllowCapes())
     		plugin.addCapes();
-     }
+     }*/
     @EventHandler(priority = EventPriority.NORMAL)
     public void onWorldChange(PlayerChangedWorldEvent event) {
-    	if(plugin.getClansConfig().isAllowCapes())
-    		plugin.addCapes();
+    	/*if(plugin.getClansConfig().isAllowCapes()) ANCRE DESACTIVATION CAPES
+    		plugin.addCapes();*/
      }
     @EventHandler(priority = EventPriority.NORMAL)
     public void onPlayerQuit(PlayerQuitEvent event){
-    	if(plugin.getTeamPlayer(event.getPlayer().getDisplayName()).hasTeam())
-    		plugin.DecreaseTeamOnlineCount(plugin.getTeamPlayer(event.getPlayer().getDisplayName()).getTeamKey());
+    	if(plugin.getTeamPlayer(event.getPlayer().getUniqueId()).hasTeam())
+    		plugin.DecreaseTeamOnlineCount(plugin.getTeamPlayer(event.getPlayer().getUniqueId()).getTeamKey());
     }
     @EventHandler(priority = EventPriority.NORMAL)
     public void onEntityDamage(EntityDamageEvent event)
@@ -88,8 +89,8 @@ public class ClansPlayerListener implements Listener {
 	    		Player attacker = (Player)e.getDamager();
 	    		Player victim = (Player)e.getEntity();
 	    		
-	    		TeamPlayer att = plugin.getTeamPlayer(attacker.getDisplayName());
-	    		TeamPlayer vic = plugin.getTeamPlayer(victim.getDisplayName());
+	    		TeamPlayer att = plugin.getTeamPlayer(attacker.getUniqueId());
+	    		TeamPlayer vic = plugin.getTeamPlayer(victim.getUniqueId());
 	    		
 	    		if(att.getTeamKey().equalsIgnoreCase(vic.getTeamKey()) && !att.getTeamKey().equalsIgnoreCase(""))
 	    		{
@@ -108,13 +109,13 @@ public class ClansPlayerListener implements Listener {
 	        {
 	            ThrownPotion potion = (ThrownPotion)e.getDamager();
 	            Entity entity = event.getEntity();
-	            int damage = event.getDamage();
+	            double damage = event.getDamage();
 	            if(potion.getShooter() instanceof Player && entity instanceof Player) {
 		    		Player attacker = (Player)potion.getShooter();
 		    		Player victim = (Player)entity;
 		    		
-		    		TeamPlayer att = plugin.getTeamPlayer(attacker.getDisplayName());
-		    		TeamPlayer vic = plugin.getTeamPlayer(victim.getDisplayName());
+		    		TeamPlayer att = plugin.getTeamPlayer(attacker.getUniqueId());
+		    		TeamPlayer vic = plugin.getTeamPlayer(victim.getUniqueId());
 		    		
 		    		if(att.getTeamKey().equalsIgnoreCase(vic.getTeamKey()) && !att.getTeamKey().equalsIgnoreCase(""))
 		    		{
@@ -133,13 +134,13 @@ public class ClansPlayerListener implements Listener {
 	        {
 	            Arrow arrow = (Arrow)e.getDamager();
 	            Entity entity = event.getEntity();
-	            int damage = event.getDamage();
+	            double damage = event.getDamage();
 	            if(arrow.getShooter() instanceof Player && entity instanceof Player) {
 		    		Player attacker = (Player)arrow.getShooter();
 		    		Player victim = (Player)entity;
 		    		
-		    		TeamPlayer att = plugin.getTeamPlayer(attacker.getDisplayName());
-		    		TeamPlayer vic = plugin.getTeamPlayer(victim.getDisplayName());
+		    		TeamPlayer att = plugin.getTeamPlayer(attacker.getUniqueId());
+		    		TeamPlayer vic = plugin.getTeamPlayer(victim.getUniqueId());
 		    		
 		    		if(att.getTeamKey().equalsIgnoreCase(vic.getTeamKey()) && !att.getTeamKey().equalsIgnoreCase(""))
 		    		{
@@ -197,7 +198,7 @@ public class ClansPlayerListener implements Listener {
     		String area = plugin.findArea(player.getLocation().getBlockX(), player.getLocation().getBlockZ(), player.getWorld().getName());
     		if(!area.equalsIgnoreCase(""))
     		{
-    			String playerTeam = plugin.getTeamPlayer(player.getDisplayName()).getTeamKey();
+    			String playerTeam = plugin.getTeamPlayer(player.getUniqueId()).getTeamKey();
     			//check if they arent the same team area
     			if(!playerTeam.equalsIgnoreCase(area))
     			{
@@ -209,16 +210,16 @@ public class ClansPlayerListener implements Listener {
     		}
     	}
     }
-    private String insertData(String format, String tag, String PlayerName)
+    private String insertData(String format, String tag, UUID PlayerUuid)
     {
     	format = format.replace("{PLAYER}", "%1$s");
     	format = format.replace("{MSG}", "%2$s");
     	
-    	TeamPlayer tPlayer = plugin.getTeamPlayer(PlayerName);
-    	Team team = plugin.getTeam(PlayerName);
+    	TeamPlayer tPlayer = plugin.getTeamPlayer(PlayerUuid);
+    	Team team = plugin.getTeam(PlayerUuid);
     	
     	if(tPlayer.hasTeam()) {
-    		if(plugin.getTeam(PlayerName).hasTag()) {
+    		if(plugin.getTeam(PlayerUuid).hasTag()) {
     			tag = tag.replace("{CLANCOLOR}", ""+team.getColor());
     			tag = tag.replace("{CLANTAG}", ""+team.getTeamTag());
     			format = format.replace("{FULLTAG}", tag);

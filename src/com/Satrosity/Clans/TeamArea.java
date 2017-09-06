@@ -3,6 +3,7 @@ package com.Satrosity.Clans;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.HashSet;
+import java.util.UUID;
 
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
@@ -25,7 +26,7 @@ public class TeamArea {
 	//Upgrades Variables
 	private int LastAlertTime;
 	private HashSet<Location> Cleanser = new HashSet<Location>();
-	private HashSet<String> DamagerKeys = new HashSet<String>();
+	private HashSet<UUID> DamagerKeys = new HashSet<UUID>();
 	private int LastOnlineTime;
 	
 	public TeamArea(String aN, int X, int Z, String worldname, int rad, String hold, boolean upIA, boolean upBR, boolean upBDD, boolean upAC)
@@ -222,11 +223,11 @@ public class TeamArea {
 	{
 		Cleanser = new HashSet<Location>();
 	}
-	public boolean hasDamagerKey(String playername) {
-		return DamagerKeys.contains(playername);
+	public boolean hasDamagerKey(UUID playerUuid) {
+		return DamagerKeys.contains(playerUuid);
 	}
-	public void addDamagerKey(String playername) {
-		DamagerKeys.add(playername);
+	public void addDamagerKey(UUID playerUuid) {
+		DamagerKeys.add(playerUuid);
 	}
 	public int getLastOnlineTime() {
 		return LastOnlineTime;
@@ -235,7 +236,7 @@ public class TeamArea {
 		LastOnlineTime = getTime();
 	}
 	public void removeAllDamagerKeys() {
-		DamagerKeys = new HashSet<String>();
+		DamagerKeys = new HashSet<UUID>();
 	}
 	
 }

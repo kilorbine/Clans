@@ -2,7 +2,6 @@ package com.Satrosity.Clans;
 
 import java.util.logging.Logger;
 
-import net.minecraft.server.Block;
 
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -10,7 +9,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockDamageEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
-import org.bukkit.event.player.PlayerJoinEvent;
+//import org.bukkit.event.player.PlayerJoinEvent;
 
 public class ClansBlockListener implements Listener{
     public Clans plugin;
@@ -23,10 +22,10 @@ public class ClansBlockListener implements Listener{
     public void onBlockPlace(BlockPlaceEvent event){
     	if(!event.isCancelled()) {
 	    	String test = plugin.findArea(event.getBlock().getX(), event.getBlock().getZ(), event.getBlock().getWorld().getName());
-	    	String userTeam = plugin.getTeamPlayer(event.getPlayer().getDisplayName()).getTeamKey();
+	    	String userTeam = plugin.getTeamPlayer(event.getPlayer().getUniqueId()).getTeamKey();
 	    	if(!userTeam.equalsIgnoreCase(test)) {
-	    		
-	    		if(event.getBlock().getTypeId() != 46) { //no placing inside team areas
+	    		 
+	    		if(event.getBlock().getType() != org.bukkit.Material.TNT) { //no placing inside team areas
 			    	if(!test.equalsIgnoreCase("")) { //Block Break in Area
 			    		TeamArea a = plugin.getArea(test);
 			    		if(a.hasUpgradeAlerter())
@@ -44,7 +43,7 @@ public class ClansBlockListener implements Listener{
     public void onBlockBreak(BlockBreakEvent event){
     	if(!event.isCancelled()) {
 	    	String test = plugin.findArea(event.getBlock().getX(), event.getBlock().getZ(), event.getBlock().getWorld().getName());
-	    	String userTeam = plugin.getTeamPlayer(event.getPlayer().getDisplayName()).getTeamKey();
+	    	String userTeam = plugin.getTeamPlayer(event.getPlayer().getUniqueId()).getTeamKey();
 		    if(!test.equalsIgnoreCase("")) { //Block Break in Area
 		    	TeamArea a = plugin.getArea(test);
 	    		if(a.hasUpgradeCleanser())
@@ -75,10 +74,10 @@ public class ClansBlockListener implements Listener{
     public void onBlockDamage(BlockDamageEvent event){
     	if(!event.isCancelled()) {
 	    	String test = plugin.findArea(event.getBlock().getX(), event.getBlock().getZ(), event.getBlock().getWorld().getName());
-	    	String userTeam = plugin.getTeamPlayer(event.getPlayer().getDisplayName()).getTeamKey();
+	    	String userTeam = plugin.getTeamPlayer(event.getPlayer().getUniqueId()).getTeamKey();
 		    if(!test.equalsIgnoreCase("")) { //Block Break in Area
 		    	//if storage then ignore
-				if(event.getBlock().getTypeId() != 54 && event.getBlock().getTypeId() != 61 && event.getBlock().getTypeId() != 62 && event.getBlock().getTypeId() != 64) {
+				if(event.getBlock().getType() != org.bukkit.Material.CHEST && event.getBlock().getType() != org.bukkit.Material.FURNACE && event.getBlock().getType() != org.bukkit.Material.BURNING_FURNACE && event.getBlock().getType() != org.bukkit.Material.WOODEN_DOOR) {
 			    	TeamArea a = plugin.getArea(test);
 			    	if(!userTeam.equalsIgnoreCase(test)) {
 			    		if(a.hasUpgradeResistance())
